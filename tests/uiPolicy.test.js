@@ -25,8 +25,17 @@ assert.match(appSource, /<details id="pricing-controls"/);
 assert.doesNotMatch(appSource, /<details id="pricing-controls"[^>]*open/);
 assert.match(appSource, /Furnish new Prestige door\(s\)\/window\(s\)\./);
 assert.match(appSource, /drawInstallationLine/);
+assert.match(appSource, /drawDoorTotalLine/);
 assert.match(appSource, /total-package-metric/);
+assert.match(appSource, /production-deposit-metric/);
 assert.doesNotMatch(appSource, /Installation included:/);
+assert.match(appSource, /formatDiscountPercent\(unit\.discountRate\)/);
+assert.match(appSource, /formatAccountingDiscount\(unit\.lineDiscountAmount\)/);
+assert.match(appSource, /formatDiscountPercent\(result\.totals\.installationDiscountRate\)/);
+assert.doesNotMatch(appSource, /unit\.totalSf \? `\$\{unit\.totalSf\} SF`/);
+
+const additionalSpecsSource = appSource.match(/function formatAdditionalSpecs\(unit\) \{([\s\S]*?)\n\}/)?.[1] || "";
+assert.doesNotMatch(additionalSpecsSource, /unit\.buildType/);
 
 
 assert.match(appSource, /Discard Browser Edits & Use Repository Defaults/);

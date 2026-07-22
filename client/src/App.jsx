@@ -26,6 +26,10 @@ const preciseCurrency = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2
 });
 
+const percentage = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 2
+});
+
 const today = new Intl.DateTimeFormat("en-US", {
   month: "2-digit",
   day: "2-digit",
@@ -46,6 +50,17 @@ const QUOTE_TERMS_NOTICE = "Applicable taxes, if any, are not included. This quo
 function capitalizeFirst(value) {
   const text = String(value ?? "").trim();
   return text ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : "";
+}
+
+function formatDiscountPercent(rate) {
+  const normalized = Number(rate || 0);
+  if (!normalized) return "-";
+  return `${percentage.format(normalized * 100)}%`;
+}
+
+function formatAccountingDiscount(value, formatter = currency) {
+  const amount = Math.abs(Number(value || 0));
+  return amount ? `(${formatter.format(amount)})` : "-";
 }
 
 function round2(value) {
@@ -1139,7 +1154,6 @@ function formatUnitSummary(unit) {
   const parts = [
     unit.style,
     unit.dimensions,
-    unit.totalSf ? `${unit.totalSf} SF` : "",
     doorTypeLabel(unit.slabs)
   ];
   return parts.filter(Boolean).join(" • ");
@@ -1147,7 +1161,6 @@ function formatUnitSummary(unit) {
 
 function formatAdditionalSpecs(unit) {
   const specs = [
-    unit.buildType,
     unit.swing,
     unit.color,
     unit.glassTexture ? `${unit.glassTexture} glass` : "",
@@ -1173,6 +1186,11 @@ function pdfMoney(value) {
     currency: "USD",
     maximumFractionDigits: 0
   }).format(Number(value || 0));
+}
+
+function pdfAccountingDiscount(value) {
+  const amount = Math.abs(Number(value || 0));
+  return amount ? `(${pdfMoney(amount)})` : "-";
 }
 
 function safePdfText(value) {
@@ -1219,7 +1237,20 @@ function drawRightText(page, text, xRight, y, options) {
   page.drawText(safe, { ...options, x: xRight - width, y });
 }
 
-function drawMetricCard(page, label, value, x, y, width, fonts, colors, note = "", highlight = false) {
+function drawMetricCard(
+  page,
+  label,
+  value,
+  x,
+  y,
+  width,
+  fonts,
+  colors,
+  note = "",
+  highlight = false,
+  labelColor = null,
+  valueText = null
+) {
   page.drawRectangle({
     x,
     y,
@@ -1234,9 +1265,9 @@ function drawMetricCard(page, label, value, x, y, width, fonts, colors, note = "
     y: y + 38,
     size: 7,
     font: fonts.bold,
-    color: highlight ? colors.white : colors.muted
+    color: highlight ? colors.white : (labelColor || colors.muted)
   });
-  page.drawText(pdfMoney(value), {
+  page.drawText(valueText || pdfMoney(value), {
     x: x + 9,
     y: y + 18,
     size: 15,
@@ -1491,31 +1522,121 @@ function drawLineItemsTable(page, rowLayouts, startY, fonts, colors, startIndex 
       color: colors.muted
     }));
 
-    const values = [
-      String(unit.quantity || ""),
-      pdfMoney(unit.lineRetailRevenue || 0),
-      unit.lineDiscountAmount ? `-${pdfMoney(unit.lineDiscountAmount)}` : pdfMoney(0),
-      pdfMoney(unit.lineMaterialRevenue || 0)
-    ];
-    const starts = [x + widths[0] + widths[1], x + widths[0] + widths[1] + widths[2], x + widths[0] + widths[1] + widths[2] + widths[3], x + widths[0] + widths[1] + widths[2] + widths[3] + widths[4]];
-    const cellWidths = widths.slice(2);
-    values.forEach((value, valueIndex) => {
-      const font = valueIndex === 3 ? fonts.bold : fonts.regular;
-      const size = valueIndex === 0 ? 8 : 7.2;
+    const quantityStart = x + widths[0] + widths[1];
+    const retailStart = quantityStart + widths[2];
+    const discountStart = retailStart + widths[3];
+    const priceStart = discountStart + widths[4];
+
+    const centeredValue = (value, start, width, { font = fonts.regular, size = 7.2, yPosition = numericBaseline } = {}) => {
       const textWidth = font.widthOfTextAtSize(value, size);
       page.drawText(value, {
-        x: starts[valueIndex] + (cellWidths[valueIndex] - textWidth) / 2,
-        y: numericBaseline,
+        x: start + (width - textWidth) / 2,
+        y: yPosition,
         size,
         font,
         color: colors.ink
       });
-    });
+    };
+
+    centeredValue(String(unit.quantity || ""), quantityStart, widths[2], { size: 8 });
+    centeredValue(pdfMoney(unit.lineRetailRevenue || 0), retailStart, widths[3]);
+    centeredValue(pdfMoney(unit.lineMaterialRevenue || 0), priceStart, widths[5], { font: fonts.bold });
+
+    if (Number(unit.discountRate || 0)) {
+      centeredValue(formatDiscountPercent(unit.discountRate), discountStart, widths[4], {
+        font: fonts.bold,
+        size: 7.2,
+        yPosition: numericBaseline + 5
+      });
+      centeredValue(pdfAccountingDiscount(unit.lineDiscountAmount), discountStart, widths[4], {
+        size: 6.5,
+        yPosition: numericBaseline - 7
+      });
+    } else {
+      centeredValue("-", discountStart, widths[4], { font: fonts.bold, size: 8 });
+    }
 
     y = rowBottom;
   });
 
   return y;
+}
+
+function drawDoorTotalLine(page, result, startY, fonts, colors) {
+  const x = 38;
+  const widths = [265, 80, 80, 111];
+  const top = startY - 7;
+  const height = 34;
+  const bottom = top - height;
+
+  page.drawRectangle({
+    x,
+    y: bottom,
+    width: 536,
+    height,
+    color: colors.white,
+    borderColor: colors.olive,
+    borderWidth: 0.8
+  });
+
+  let cursorX = x;
+  widths.slice(0, -1).forEach((width) => {
+    cursorX += width;
+    page.drawLine({
+      start: { x: cursorX, y: bottom },
+      end: { x: cursorX, y: top },
+      thickness: 0.35,
+      color: colors.border
+    });
+  });
+
+  page.drawText("DOOR UNITS TOTAL", {
+    x: x + 10,
+    y: bottom + 17,
+    size: 7.5,
+    font: fonts.bold,
+    color: colors.olive
+  });
+  page.drawText("All quoted door and window units", {
+    x: x + 10,
+    y: bottom + 7,
+    size: 5.7,
+    font: fonts.regular,
+    color: colors.muted
+  });
+
+  const labels = ["RETAIL", "DISCOUNT", "DOOR TOTAL"];
+  const values = [
+    pdfMoney(result.totals.materialRetailSubtotal || 0),
+    pdfAccountingDiscount(result.totals.materialDiscountAmount),
+    pdfMoney(result.totals.materialSubtotal || 0)
+  ];
+
+  let valueX = x + widths[0];
+  values.forEach((value, index) => {
+    const width = widths[index + 1];
+    const labelWidth = fonts.bold.widthOfTextAtSize(labels[index], 5.4);
+    page.drawText(labels[index], {
+      x: valueX + (width - labelWidth) / 2,
+      y: bottom + 22,
+      size: 5.4,
+      font: fonts.bold,
+      color: colors.muted
+    });
+    const font = index === 2 ? fonts.bold : fonts.regular;
+    const size = index === 2 ? 7.4 : 7;
+    const textWidth = font.widthOfTextAtSize(value, size);
+    page.drawText(value, {
+      x: valueX + (width - textWidth) / 2,
+      y: bottom + 8,
+      size,
+      font,
+      color: colors.ink
+    });
+    valueX += width;
+  });
+
+  return bottom;
 }
 
 function drawInstallationLine(page, result, startY, fonts, colors) {
@@ -1564,9 +1685,7 @@ function drawInstallationLine(page, result, startY, fonts, colors) {
   const labels = ["RETAIL", "DISCOUNT", "INSTALLATION PRICE"];
   const values = [
     pdfMoney(result.totals.installationGross || 0),
-    result.totals.installationDiscountAmount
-      ? `-${pdfMoney(result.totals.installationDiscountAmount)}`
-      : pdfMoney(0),
+    formatDiscountPercent(result.totals.installationDiscountRate),
     pdfMoney(result.totals.installationNet || 0)
   ];
 
@@ -1673,6 +1792,7 @@ async function buildCombinedInvoicePdf(result, supplements) {
   const fonts = { regular, bold };
   const colors = {
     olive: rgb(0.36, 0.37, 0.07),
+    darkRed: rgb(0.45, 0.08, 0.08),
     ink: rgb(0.12, 0.14, 0.13),
     muted: rgb(0.35, 0.37, 0.35),
     border: rgb(0.78, 0.79, 0.75),
@@ -1708,12 +1828,15 @@ async function buildCombinedInvoicePdf(result, supplements) {
       fonts,
       colors,
       metric[2],
-      index === 2
+      index === 2,
+      index === 3 ? colors.darkRed : null,
+      index === 1 ? pdfAccountingDiscount(metric[1]) : null
     );
   });
 
   const tableBottom = drawLineItemsTable(firstPage, firstPageRows, 532, fonts, colors, 0);
-  const installationBottom = drawInstallationLine(firstPage, result, tableBottom, fonts, colors);
+  const doorTotalBottom = drawDoorTotalLine(firstPage, result, tableBottom, fonts, colors);
+  const installationBottom = drawInstallationLine(firstPage, result, doorTotalBottom, fonts, colors);
   drawWorkScope(firstPage, result, installationBottom, fonts, colors);
 
   const contact = [result.preparedBy?.email, result.preparedBy?.phone].filter(Boolean).join(" | ");
@@ -1897,9 +2020,9 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
           </div>
           <div className="invoice-metrics">
             <div><span>Package Retail Price</span><strong>{currency.format(result.totals.suggestedRetail || 0)}</strong><small>Before Discounts</small></div>
-            <div><span>Total Discounts</span><strong>-{currency.format(result.totals.totalDiscountAmount || 0)}</strong><small>Door Units + Installation</small></div>
+            <div><span>Total Discounts</span><strong>{formatAccountingDiscount(result.totals.totalDiscountAmount)}</strong><small>Door Units + Installation</small></div>
             <div className="total-package-metric"><span>Total Package Price</span><strong>{currency.format(result.totals.quoteTotal || 0)}</strong><small>After All Discounts</small></div>
-            <div><span>Production Deposit</span><strong>{currency.format(result.totals.productionDepositDue || 0)}</strong><small>Discounted Door Units Only</small></div>
+            <div className="production-deposit-metric"><span>Production Deposit</span><strong>{currency.format(result.totals.productionDepositDue || 0)}</strong><small>Discounted Door Units Only</small></div>
           </div>
         </>
       ) : (
@@ -1929,7 +2052,14 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
               </td>
               <td>{unit.quantity}</td>
               <td>{currency.format(unit.lineRetailRevenue || 0)}</td>
-              <td>{unit.lineDiscountAmount ? `-${currency.format(unit.lineDiscountAmount)}` : currency.format(0)}</td>
+              <td className="discount-cell">
+                {Number(unit.discountRate || 0) ? (
+                  <>
+                    <strong>{formatDiscountPercent(unit.discountRate)}</strong>
+                    <span>{formatAccountingDiscount(unit.lineDiscountAmount)}</span>
+                  </>
+                ) : "-"}
+              </td>
               <td>{currency.format(unit.lineMaterialRevenue || 0)}</td>
             </tr>
           ))}
@@ -1938,6 +2068,18 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
 
       {firstPage ? (
         <>
+          <div className="invoice-door-total-strip">
+            <div>
+              <span>Door Units Total</span>
+              <small>All Quoted Door and Window Units</small>
+            </div>
+            <div className="door-total-values">
+              <span>Retail <strong>{currency.format(result.totals.materialRetailSubtotal || 0)}</strong></span>
+              <span>Discount <strong>{formatAccountingDiscount(result.totals.materialDiscountAmount)}</strong></span>
+              <span>Door Total <strong>{currency.format(result.totals.materialSubtotal || 0)}</strong></span>
+            </div>
+          </div>
+
           <div className="invoice-install-strip">
             <div>
               <span>Installation</span>
@@ -1945,7 +2087,7 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
             </div>
             <div className="installation-values">
               <span>Retail <strong>{currency.format(result.totals.installationGross || 0)}</strong></span>
-              <span>Discount <strong>-{currency.format(result.totals.installationDiscountAmount || 0)}</strong></span>
+              <span>Discount <strong>{formatDiscountPercent(result.totals.installationDiscountRate)}</strong></span>
               <span>Installation Price <strong>{currency.format(result.totals.installationNet || 0)}</strong></span>
             </div>
           </div>

@@ -30,3 +30,14 @@
 - Renamed the local reset action to **Discard Browser Edits & Use Repository Defaults**.
 - Repository pricing requests bypass browser HTTP cache.
 - Replaced the bottom quote notice with the approved taxes, validity, deposit, and balance language.
+
+## v2.11
+
+- Shows each door discount percentage as a positive percentage above the dollar discount in accounting parentheses.
+- Displays zero discounts as a dash.
+- Shows only the positive installation discount percentage on the installation line.
+- Uses accounting parentheses for the Total Discounts card and door-total discount.
+- Colors the Production Deposit heading dark red.
+- Removes total square footage and build/job type from customer-facing door specifications.
+- Adds a distinct Door Units Total line before the separate Installation line.
+- Tightens the standard fixed door-row height while keeping detailed door rows indivisible and expandable when needed.

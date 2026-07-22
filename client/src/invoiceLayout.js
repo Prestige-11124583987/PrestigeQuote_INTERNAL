@@ -1,4 +1,4 @@
-export const STANDARD_DOOR_ROW_HEIGHT = 72;
+export const STANDARD_DOOR_ROW_HEIGHT = 60;
 
 export function normalizeDoorRowHeight(
   contentHeight,

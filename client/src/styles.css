@@ -1398,6 +1398,7 @@ button:disabled {
 
 .invoice-customer-strip span,
 .invoice-metrics span,
+.invoice-door-total-strip span,
 .invoice-install-strip span {
   color: #686b63;
   font-size: 0.61rem;
@@ -1498,6 +1499,22 @@ button:disabled {
   font-size: 0.61rem;
 }
 
+.compact-invoice-table .discount-cell strong,
+.compact-invoice-table .discount-cell span {
+  display: block;
+}
+
+.compact-invoice-table .discount-cell strong {
+  font-size: 0.72rem;
+}
+
+.compact-invoice-table .discount-cell span {
+  margin-top: 2px;
+  color: #686b63;
+  font-size: 0.62rem;
+}
+
+.invoice-door-total-strip,
 .invoice-install-strip {
   display: flex;
   align-items: center;
@@ -1509,16 +1526,24 @@ button:disabled {
   background: #f5f5ef;
 }
 
+.invoice-door-total-strip {
+  border-color: #5d5f13;
+  background: #fff;
+}
+
+.invoice-door-total-strip > div,
 .invoice-install-strip > div {
   display: grid;
   gap: 4px;
 }
 
+.invoice-door-total-strip small,
 .invoice-install-strip small {
   color: #676a62;
   font-size: 0.66rem;
 }
 
+.invoice-door-total-strip > strong,
 .invoice-install-strip > strong {
   font-size: 1rem;
 }
@@ -1739,6 +1764,15 @@ button:disabled {
   color: #fff;
 }
 
+.invoice-metrics > .production-deposit-metric > span {
+  color: #7a1f1f;
+}
+
+.invoice-door-total-strip > div:first-child > span {
+  color: #5d5f13;
+}
+
+.door-total-values,
 .installation-values {
   display: grid !important;
   grid-template-columns: repeat(3, auto);
@@ -1747,11 +1781,13 @@ button:disabled {
   text-align: right;
 }
 
+.door-total-values span,
 .installation-values span {
   display: grid;
   gap: 2px;
 }
 
+.door-total-values strong,
 .installation-values strong {
   color: #20231f;
   font-size: 0.82rem;

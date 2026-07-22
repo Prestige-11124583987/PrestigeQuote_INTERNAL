@@ -1,6 +1,6 @@
-# Prestige Internal Quote Tool v2.7
+# Prestige Internal Quote Tool v2.11
 
-## v2.8 Quote Builder Updates
+## Current Quote Builder
 
 - Pricing & Options is collapsed by default.
 - Unit cards can be duplicated with all specifications and add-ons.
