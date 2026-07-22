@@ -14,3 +14,10 @@
 - Removed installation from individual door rows. Door rows now show door-and-add-on retail, discount, and final door price only.
 - Added one separate **Installation** line showing installation retail, installation discount, and final installation price.
 - Kept the production deposit based only on discounted door units, excluding installation.
+
+## v2.9
+
+- Fixed repository `pricingData.js` changes being ignored after a browser had saved Pricing & Options.
+- Repository pricing is now fingerprinted automatically on each deployment.
+- When repository pricing changes, stale full-browser pricing is cleared once so the new defaults—including Retail discounts—take effect.
+- Browser-local edits continue to persist until the repository pricing source changes.

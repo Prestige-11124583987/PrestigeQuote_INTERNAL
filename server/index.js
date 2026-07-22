@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 import { pricingData as defaultPricingData } from "./pricingData.js";
 import {
@@ -25,6 +26,11 @@ const supplementsDirectory = process.env.SUPPLEMENTS_DIR ||
     : path.join(__dirname, "..", "invoice-supplements"));
 
 const quoteStore = [];
+const DEFAULT_PRICING_REVISION = crypto
+  .createHash("sha256")
+  .update(JSON.stringify(defaultPricingData))
+  .digest("hex")
+  .slice(0, 16);
 
 app.use(cors());
 app.use(express.json({ limit: "60mb" }));
@@ -137,6 +143,7 @@ function normalizePricingData(input) {
     data.referenceLists[listName] = unique(values);
   }
 
+  data.metadata.sourceRevision = DEFAULT_PRICING_REVISION;
   return data;
 }
 
@@ -195,7 +202,7 @@ function listSupplements() {
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
 }
 
-let currentPricingData = loadPricingData();
+let currentPricingData = normalizePricingData(defaultPricingData);
 
 app.get("/api/config", (req, res) => {
   res.json(sanitizePricingForClient(currentPricingData));
@@ -350,6 +357,6 @@ if (fs.existsSync(clientDistPath)) {
 
 app.listen(port, () => {
   console.log(`Prestige estimator app listening on port ${port}`);
-  console.log("Browser-local pricing and invoice supplement storage enabled.");
+  console.log(`Browser-local pricing enabled; repository pricing revision ${DEFAULT_PRICING_REVISION}.`);
   console.log(`Temporary server data directory: ${dataDirectory}`);
 });

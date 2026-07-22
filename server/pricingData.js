@@ -210,11 +210,11 @@ export const pricingData = {
   ],
   "discounts": {
     "Retail": {
-      "Low": 0.10,
-      "High": 0.18
+      "Low": 0.18,
+      "High": 0.22
     },
     "Builder": {
-      "Low": 0.25,
+      "Low": 0.3,
       "High": 0.35
     },
     "Distributor": {

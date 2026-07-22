@@ -1,3 +1,5 @@
+import { makeStoredPricingRecord, resolveStoredPricing } from "./pricingStorage.js";
+
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 const PRICING_STORAGE_KEY = "prestige.quoteTool.pricing.v1";
@@ -11,7 +13,7 @@ async function readJson(res, fallbackMessage) {
   return data;
 }
 
-function readStoredPricing() {
+function readStoredPricingRecord() {
   try {
     const raw = window.localStorage.getItem(PRICING_STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -21,12 +23,44 @@ function readStoredPricing() {
   }
 }
 
+function readStoredPricing() {
+  return readStoredPricingRecord()?.pricing || null;
+}
+
+function clearStoredPricing() {
+  try {
+    window.localStorage.removeItem(PRICING_STORAGE_KEY);
+  } catch (error) {
+    console.warn("Could not clear browser pricing:", error);
+  }
+}
+
 function saveStoredPricing(pricing) {
   try {
-    window.localStorage.setItem(PRICING_STORAGE_KEY, JSON.stringify(pricing));
+    const record = makeStoredPricingRecord(pricing);
+    window.localStorage.setItem(PRICING_STORAGE_KEY, JSON.stringify(record));
   } catch (error) {
     throw new Error("Could not save pricing in this browser. Check browser storage settings.");
   }
+}
+
+async function getRepositoryPricing() {
+  const res = await fetch(`${API_BASE}/api/admin/pricing`);
+  return readJson(res, "Could not load repository pricing.");
+}
+
+async function getEffectivePricing() {
+  const repositoryPricing = await getRepositoryPricing();
+  const storedRecord = readStoredPricingRecord();
+  const effectivePricing = resolveStoredPricing(repositoryPricing, storedRecord);
+
+  if (effectivePricing === repositoryPricing && storedRecord) {
+    // A repository pricing change invalidates the old full-browser copy. This
+    // prevents stale local discounts and prices from overriding a new deploy.
+    clearStoredPricing();
+  }
+
+  return effectivePricing;
 }
 
 function sanitizePricingForClient(data) {
@@ -52,7 +86,8 @@ function sanitizePricingForClient(data) {
   return {
     metadata: {
       discountPolicy: data?.metadata?.discountPolicy,
-      installDiscountPolicy: data?.metadata?.installDiscountPolicy
+      installDiscountPolicy: data?.metadata?.installDiscountPolicy,
+      sourceRevision: data?.metadata?.sourceRevision
     },
     referenceLists: data?.referenceLists || {},
     publicPricing: {
@@ -73,11 +108,8 @@ function quoteRequestBody(quote) {
 }
 
 export async function getConfig() {
-  const localPricing = readStoredPricing();
-  if (localPricing) return sanitizePricingForClient(localPricing);
-
-  const res = await fetch(`${API_BASE}/api/config`);
-  return readJson(res, "Could not load estimator config.");
+  const pricing = await getEffectivePricing();
+  return sanitizePricingForClient(pricing);
 }
 
 export async function getSampleQuote() {
@@ -104,11 +136,7 @@ export async function saveQuote(quote) {
 }
 
 export async function getAdminPricing() {
-  const localPricing = readStoredPricing();
-  if (localPricing) return localPricing;
-
-  const res = await fetch(`${API_BASE}/api/admin/pricing`);
-  return readJson(res, "Could not load pricing.");
+  return getEffectivePricing();
 }
 
 export async function updateAdminPricing(pricing) {
@@ -123,11 +151,7 @@ export async function updateAdminPricing(pricing) {
 }
 
 export async function resetAdminPricing() {
-  try {
-    window.localStorage.removeItem(PRICING_STORAGE_KEY);
-  } catch (error) {
-    console.warn("Could not clear browser pricing:", error);
-  }
+  clearStoredPricing();
 
   const res = await fetch(`${API_BASE}/api/admin/pricing`);
   return readJson(res, "Could not reset pricing.");

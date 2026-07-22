@@ -317,7 +317,8 @@ export function sanitizePricingForClient(data) {
   return {
     metadata: {
       discountPolicy: data.metadata.discountPolicy,
-      installDiscountPolicy: data.metadata.installDiscountPolicy
+      installDiscountPolicy: data.metadata.installDiscountPolicy,
+      sourceRevision: data.metadata.sourceRevision
     },
     referenceLists: data.referenceLists,
     publicPricing: {
