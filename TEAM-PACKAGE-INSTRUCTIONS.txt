@@ -1,0 +1,12 @@
+PRESTIGE INTERNAL QUOTE TOOL v2.7
+
+PRICING EDITOR
+Use the Pricing & options editor inside the app. Team members can change base selling prices, add-on names, add-on selling prices, installation prices, discounts, and dropdown lists. Click Save Pricing to keep the changes in that browser.
+
+Cost, markup, and margin information has been removed.
+
+QUOTE SUPPLEMENTS
+Use the Quote Supplements card to upload PDFs. Every uploaded PDF is automatically appended after the generated quote in filename order. Use filename prefixes such as 01, 02, and 03 to control sequence.
+
+FREE RENDER INSTANCE
+Pricing edits and supplements are stored in the current browser. They survive Render sleeping and redeploying, but they are not shared automatically across devices.
