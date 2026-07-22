@@ -202,12 +202,12 @@
   ],
   "discountPercentages": {
     "Retail": {
-      "Low": 15,
-      "High": 20
+      "Low": 18,
+      "High": 22
     },
     "Builder": {
-      "Low": 25,
-      "High": 32
+      "Low": 30,
+      "High": 35
     },
     "Distributor": {
       "Low": 40,

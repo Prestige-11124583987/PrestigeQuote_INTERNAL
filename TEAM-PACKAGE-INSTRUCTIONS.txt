@@ -1,12 +1,39 @@
-PRESTIGE INTERNAL QUOTE TOOL v2.7
+PRESTIGE INTERNAL QUOTE TOOL v2.14
+PACKAGE VERSION 2.14.0
 
 PRICING EDITOR
-Use the Pricing & options editor inside the app. Team members can change base selling prices, add-on names, add-on selling prices, installation prices, discounts, and dropdown lists. Click Save Pricing to keep the changes in that browser.
+Open Pricing & Options inside the app. It is collapsed by default.
+
+Team members can change:
+- Base selling prices
+- Add-on names
+- Add-on selling prices
+- Installation prices
+- Retail, builder, and distributor discounts
+- Dropdown lists
+
+Click "Save Changes on This Browser" to keep changes on that browser only.
+Click "Discard Browser Edits & Use Repository Defaults" to remove that browser's saved pricing and immediately reload the repository defaults. Clearing browser cache is not required.
 
 Cost, markup, and margin information has been removed.
 
-QUOTE SUPPLEMENTS
-Use the Quote Supplements card to upload PDFs. Every uploaded PDF is automatically appended after the generated quote in filename order. Use filename prefixes such as 01, 02, and 03 to control sequence.
+DEFAULT REPOSITORY PRICING
+Edit EDIT-PRICING-HERE.json in GitHub to change the default pricing used by all new browser sessions after deployment. See EDIT-PRICING-GUIDE.md for instructions.
+
+COMPANY-WIDE QUOTE SUPPLEMENTS
+PDFs in the invoice-supplements folder are included for every salesperson after the repository deploys. They append behind every generated Quote in filename order.
+
+Current shared documents:
+1. 01-Ordering-Process.pdf
+2. 02-Limited-Product-Warranty.pdf
+
+To add, replace, remove, or reorder a shared PDF, follow SUPPLEMENT-GUIDE.md.
+
+BROWSER-ONLY SUPPLEMENTS
+The Quote Supplements card can also upload optional PDFs for the current browser. These are appended after the shared repository documents but are not shared with other devices.
 
 FREE RENDER INSTANCE
-Pricing edits and supplements are stored in the current browser. They survive Render sleeping and redeploying, but they are not shared automatically across devices.
+Repository supplements are packaged with the deployed code and work on the free Render instance. Pricing edits and optional browser uploads remain browser-local.
+
+QUOTE CALCULATION
+The door-unit retail price includes the base door price plus all selected add-ons. The door discount applies to that entire amount. Installation is shown separately. The production deposit is 50% of the discounted door/window units and excludes installation.

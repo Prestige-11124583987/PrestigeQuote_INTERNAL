@@ -20,10 +20,9 @@ const localPricingPath = process.env.PRICING_DATA_PATH ||
   (process.env.NODE_ENV === "production"
     ? path.join(dataDirectory, "pricingData.local.json")
     : path.join(__dirname, "pricingData.local.json"));
+const repositorySupplementsDirectory = path.join(__dirname, "..", "invoice-supplements");
 const supplementsDirectory = process.env.SUPPLEMENTS_DIR ||
-  (process.env.NODE_ENV === "production"
-    ? path.join(dataDirectory, "invoice-supplements")
-    : path.join(__dirname, "..", "invoice-supplements"));
+  path.join(dataDirectory, "invoice-supplements");
 
 const quoteStore = [];
 const DEFAULT_PRICING_REVISION = crypto
@@ -40,6 +39,7 @@ function ensureDirectory(directory) {
 }
 
 ensureDirectory(path.dirname(localPricingPath));
+ensureDirectory(repositorySupplementsDirectory);
 ensureDirectory(supplementsDirectory);
 
 function deepClone(value) {
@@ -176,30 +176,55 @@ function safePdfName(input) {
   return withExtension || "supplement.pdf";
 }
 
-function supplementPath(name) {
+function supplementPath(name, directory = supplementsDirectory) {
   const safeName = safePdfName(name);
-  const resolved = path.resolve(supplementsDirectory, safeName);
-  const root = path.resolve(supplementsDirectory);
+  const resolved = path.resolve(directory, safeName);
+  const root = path.resolve(directory);
   if (!resolved.startsWith(`${root}${path.sep}`)) {
     throw new Error("Invalid supplement filename.");
   }
   return { safeName, resolved };
 }
 
-function listSupplements() {
-  ensureDirectory(supplementsDirectory);
-  return fs.readdirSync(supplementsDirectory)
+function listSupplementDirectory(directory, storage) {
+  ensureDirectory(directory);
+  return fs.readdirSync(directory)
     .filter((name) => name.toLowerCase().endsWith(".pdf"))
     .map((name) => {
-      const stats = fs.statSync(path.join(supplementsDirectory, name));
+      const stats = fs.statSync(path.join(directory, name));
       return {
         name,
         sizeBytes: stats.size,
         updatedAt: stats.mtime.toISOString(),
+        storage,
         url: `/api/supplements/${encodeURIComponent(name)}`
       };
-    })
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+    });
+}
+
+function listSupplements() {
+  const shared = listSupplementDirectory(repositorySupplementsDirectory, "repository");
+  const temporary = listSupplementDirectory(supplementsDirectory, "server");
+  const byName = new Map();
+
+  // Repository files are the company-wide defaults. A temporary server file
+  // with the same name may override one during local development only.
+  for (const item of shared) byName.set(item.name.toLowerCase(), item);
+  for (const item of temporary) byName.set(item.name.toLowerCase(), item);
+
+  return [...byName.values()].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })
+  );
+}
+
+function resolveSupplementFile(name) {
+  const temporary = supplementPath(name, supplementsDirectory);
+  if (fs.existsSync(temporary.resolved)) return temporary;
+
+  const repository = supplementPath(name, repositorySupplementsDirectory);
+  if (fs.existsSync(repository.resolved)) return repository;
+
+  return null;
 }
 
 let currentPricingData = normalizePricingData(defaultPricingData);
@@ -328,10 +353,10 @@ app.post("/api/supplements", (req, res) => {
 
 app.get("/api/supplements/:name", (req, res) => {
   try {
-    const { resolved } = supplementPath(decodeURIComponent(req.params.name));
-    if (!fs.existsSync(resolved)) return res.status(404).json({ error: "Supplement not found." });
+    const file = resolveSupplementFile(decodeURIComponent(req.params.name));
+    if (!file) return res.status(404).json({ error: "Supplement not found." });
     res.type("application/pdf");
-    res.sendFile(resolved);
+    res.sendFile(file.resolved);
   } catch (error) {
     res.status(400).json({ error: error.message || "Could not read supplement." });
   }
@@ -339,7 +364,7 @@ app.get("/api/supplements/:name", (req, res) => {
 
 app.delete("/api/supplements/:name", (req, res) => {
   try {
-    const { resolved } = supplementPath(decodeURIComponent(req.params.name));
+    const { resolved } = supplementPath(decodeURIComponent(req.params.name), supplementsDirectory);
     if (fs.existsSync(resolved)) fs.unlinkSync(resolved);
     res.json(listSupplements());
   } catch (error) {
@@ -358,5 +383,6 @@ if (fs.existsSync(clientDistPath)) {
 app.listen(port, () => {
   console.log(`Prestige estimator app listening on port ${port}`);
   console.log(`Browser-local pricing enabled; repository pricing revision ${DEFAULT_PRICING_REVISION}.`);
+  console.log(`Company-wide quote supplements: ${repositorySupplementsDirectory}`);
   console.log(`Temporary server data directory: ${dataDirectory}`);
 });

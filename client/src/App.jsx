@@ -1590,7 +1590,7 @@ function drawDoorTotalLine(page, result, startY, fonts, colors) {
     });
   });
 
-  page.drawText("DOORs / WINDOWs", {
+  page.drawText("DOORS / WINDOWS", {
     x: x + 10,
     y: bottom + 11.5,
     size: 12,
@@ -1598,7 +1598,7 @@ function drawDoorTotalLine(page, result, startY, fonts, colors) {
     color: colors.olive
   });
 
-  const labels = ["   RETAIL   ", "   DISCOUNT   ", "   TOTAL   "];
+  const labels = ["RETAIL", "DISCOUNT", "TOTAL"];
   const values = [
     pdfMoney(result.totals.materialRetailSubtotal || 0),
     pdfAccountingDiscount(result.totals.materialDiscountAmount),
@@ -1668,7 +1668,7 @@ function drawInstallationLine(page, result, startY, fonts, colors) {
     color: colors.ink
   });
 
-  const labels = ["   RETAIL   ", "   DISCOUNT   ", "   TOTAL   "];
+  const labels = ["RETAIL", "DISCOUNT", "TOTAL"];
   const values = [
     pdfMoney(result.totals.installationGross || 0),
     formatDiscountPercent(result.totals.installationDiscountRate),
@@ -1797,10 +1797,10 @@ async function buildCombinedInvoicePdf(result, supplements) {
   drawCustomerBlock(firstPage, result, fonts, colors);
 
   const metrics = [
-    ["Package Retail Price", result.totals.suggestedRetail, "Before discounts"],
-    ["Total Discounts", result.totals.totalDiscountAmount, "Door units + installation"],
-    ["Total Package Price", result.totals.quoteTotal, "After all discounts"],
-    ["Production Deposit", result.totals.productionDepositDue, `${Math.round((result.totals.productionDepositRate || 0.5) * 100)}% of discounted door units`]
+    ["Package Retail Price", result.totals.suggestedRetail, "Door(s) & Installation"],
+    ["Total Savings", result.totals.totalDiscountAmount, "Door & Install Discounts"],
+    ["Total Package Price", result.totals.quoteTotal, "Door(s) + Installation"],
+    ["Production Deposit", result.totals.productionDepositDue, "Due Today"]
   ];
   const metricWidth = 130;
   metrics.forEach((metric, index) => {
@@ -1820,25 +1820,31 @@ async function buildCombinedInvoicePdf(result, supplements) {
     );
   });
 
-  const tableBottom = drawLineItemsTable(firstPage, firstPageRows, 532, fonts, colors, 0);
+  const noticeFontSize = 8;
+  const noticeLineHeight = 9.5;
+  const noticeTopY = 540;
+  const noticeLines = wrapPdfText(QUOTE_TERMS_NOTICE, regular, noticeFontSize, 536, 6);
+  noticeLines.forEach((line, index) => {
+    firstPage.drawText(line, {
+      x: 38,
+      y: noticeTopY - index * noticeLineHeight,
+      size: noticeFontSize,
+      font: regular,
+      color: colors.muted
+    });
+  });
+  const noticeBottomY = noticeTopY - Math.max(0, noticeLines.length - 1) * noticeLineHeight - 4;
+  const tableStartY = noticeBottomY - 12;
+
+  const tableBottom = drawLineItemsTable(firstPage, firstPageRows, tableStartY, fonts, colors, 0);
   const doorTotalBottom = drawDoorTotalLine(firstPage, result, tableBottom, fonts, colors);
   const installationBottom = drawInstallationLine(firstPage, result, doorTotalBottom, fonts, colors);
   drawWorkScope(firstPage, result, installationBottom, fonts, colors);
 
   const contact = [result.preparedBy?.email, result.preparedBy?.phone].filter(Boolean).join(" | ");
-  firstPage.drawLine({ start: { x: 38, y: 66 }, end: { x: 574, y: 66 }, thickness: 0.5, color: colors.border });
-  const noticeLines = wrapPdfText(QUOTE_TERMS_NOTICE, regular, 5.8, 536, 4);
-  noticeLines.forEach((line, index) => {
-    firstPage.drawText(line, {
-      x: 38,
-      y: 53 - index * 8,
-      size: 5.8,
-      font: regular,
-      color: colors.muted
-    });
-  });
+  firstPage.drawLine({ start: { x: 38, y: 26 }, end: { x: 574, y: 26 }, thickness: 0.5, color: colors.border });
   if (contact) {
-    drawRightText(firstPage, contact, 574, 14, {
+    drawRightText(firstPage, contact, 574, 12, {
       size: 5.6,
       font: regular,
       color: colors.muted
@@ -1928,7 +1934,7 @@ function SupplementManager({ supplements, setSupplements, setStatus }) {
         <div>
           <h2>Quote Supplements</h2>
           <p className="muted">
-            Every PDF here is automatically appended after the generated quote. Files are stored in this browser and print in filename order, so use prefixes such as 01, 02, and 03 to control sequence.
+            Company-wide PDFs committed to the repository are appended for every salesperson. Optional PDFs uploaded here are stored only in this browser. All supplements print in filename order, so use prefixes such as 01, 02, and 03 to control sequence.
           </p>
         </div>
         <label className="upload-button">
@@ -1960,21 +1966,27 @@ function SupplementManager({ supplements, setSupplements, setStatus }) {
       {supplements.length ? (
         <div className="supplement-list">
           {supplements.map((supplement, index) => (
-            <div className="supplement-row" key={supplement.name}>
+            <div className="supplement-row" key={`${supplement.storage}:${supplement.name}`}>
               <span className="supplement-order">{index + 1}</span>
               <div>
                 <strong>{supplement.name}</strong>
-                <span>{formatFileSize(supplement.sizeBytes)}</span>
+                <span>
+                  {formatFileSize(supplement.sizeBytes)} · {supplement.storage === "repository" ? "Company-wide" : "This browser"}
+                </span>
               </div>
               <a href={supplement.url} target="_blank" rel="noreferrer">Preview</a>
-              <button type="button" className="danger secondary small-button" onClick={() => removeSupplement(supplement.name)}>
-                Remove
-              </button>
+              {supplement.storage === "repository" ? (
+                <span className="supplement-lock">Included</span>
+              ) : (
+                <button type="button" className="danger secondary small-button" onClick={() => removeSupplement(supplement.name)}>
+                  Remove
+                </button>
+              )}
             </div>
           ))}
         </div>
       ) : (
-        <p className="empty-state">No supplements uploaded. The quote PDF will contain only the Prestige quote pages.</p>
+        <p className="empty-state">No supplements are available. Add company-wide PDFs to the repository supplement folder or upload a browser-only PDF here.</p>
       )}
     </section>
   );
@@ -2005,11 +2017,14 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
             <div><span>Prepared By</span><strong>{result.preparedBy?.name || "—"}</strong></div>
           </div>
           <div className="invoice-metrics">
-            <div><span>Package Retail Price</span><strong>{currency.format(result.totals.suggestedRetail || 0)}</strong><small>Before Discounts</small></div>
-            <div><span>Total Discounts</span><strong>{formatAccountingDiscount(result.totals.totalDiscountAmount)}</strong><small>Door Units + Installation</small></div>
-            <div className="total-package-metric"><span>Total Package Price</span><strong>{currency.format(result.totals.quoteTotal || 0)}</strong><small>After All Discounts</small></div>
-            <div className="production-deposit-metric"><span>Production Deposit</span><strong>{currency.format(result.totals.productionDepositDue || 0)}</strong><small>Discounted Door Units Only</small></div>
+            <div><span>Package Retail Price</span><strong>{currency.format(result.totals.suggestedRetail || 0)}</strong><small>Door(s) &amp; Installation</small></div>
+            <div><span>Total Savings</span><strong>{formatAccountingDiscount(result.totals.totalDiscountAmount)}</strong><small>Door &amp; Install Discounts</small></div>
+            <div className="total-package-metric"><span>Total Package Price</span><strong>{currency.format(result.totals.quoteTotal || 0)}</strong><small>Door(s) + Installation</small></div>
+            <div className="production-deposit-metric"><span>Production Deposit</span><strong>{currency.format(result.totals.productionDepositDue || 0)}</strong><small>Due Today</small></div>
           </div>
+          <p className="quote-terms-notice quote-terms-notice-top">
+            {QUOTE_TERMS_NOTICE}
+          </p>
         </>
       ) : (
         <h3 className="continuation-title">Additional doors for {result.preparedFor?.company || "customer"}</h3>
@@ -2056,25 +2071,23 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
         <>
           <div className="invoice-door-total-strip">
             <div>
-              <span>Door Units Total</span>
-              <small>All Quoted Door and Window Units</small>
+              <span>Doors / Windows</span>
             </div>
             <div className="door-total-values">
               <span>Retail <strong>{currency.format(result.totals.materialRetailSubtotal || 0)}</strong></span>
               <span>Discount <strong>{formatAccountingDiscount(result.totals.materialDiscountAmount)}</strong></span>
-              <span>Door Total <strong>{currency.format(result.totals.materialSubtotal || 0)}</strong></span>
+              <span>Total <strong>{currency.format(result.totals.materialSubtotal || 0)}</strong></span>
             </div>
           </div>
 
           <div className="invoice-install-strip">
             <div>
               <span>Installation</span>
-              <small>Listed Separately from Door Units</small>
             </div>
             <div className="installation-values">
               <span>Retail <strong>{currency.format(result.totals.installationGross || 0)}</strong></span>
               <span>Discount <strong>{formatDiscountPercent(result.totals.installationDiscountRate)}</strong></span>
-              <span>Installation Price <strong>{currency.format(result.totals.installationNet || 0)}</strong></span>
+              <span>Total <strong>{currency.format(result.totals.installationNet || 0)}</strong></span>
             </div>
           </div>
 
@@ -2089,9 +2102,6 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
             </div>
           ) : null}
 
-          <p className="invoice-deposit-note quote-terms-notice">
-            {QUOTE_TERMS_NOTICE}
-          </p>
         </>
       ) : (
         <p className="invoice-deposit-note">Package Totals and Production Deposit Appear on Quote Page 1.</p>

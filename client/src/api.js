@@ -227,7 +227,7 @@ function supplementMetadata(record) {
   };
 }
 
-export async function getSupplements() {
+async function getBrowserSupplements() {
   const records = await withSupplementStore("readonly", (store) =>
     requestResult(store.getAll())
   );
@@ -238,6 +238,34 @@ export async function getSupplements() {
       sensitivity: "base"
     }))
     .map(supplementMetadata);
+}
+
+async function getRepositorySupplements() {
+  const res = await fetch(`${API_BASE}/api/supplements`, { cache: "no-store" });
+  const records = await readJson(res, "Could not load company-wide quote supplements.");
+
+  return (records || []).map((record) => ({
+    ...record,
+    storage: "repository",
+    locked: true,
+    url: record.url?.startsWith("http") ? record.url : `${API_BASE}${record.url}`
+  }));
+}
+
+export async function getSupplements() {
+  const [repository, browser] = await Promise.all([
+    getRepositorySupplements(),
+    getBrowserSupplements()
+  ]);
+
+  return [...repository, ...browser].sort((a, b) => {
+    const nameOrder = a.name.localeCompare(b.name, undefined, {
+      numeric: true,
+      sensitivity: "base"
+    });
+    if (nameOrder) return nameOrder;
+    return a.storage === "repository" ? -1 : 1;
+  });
 }
 
 export async function uploadSupplements(files) {
