@@ -1960,7 +1960,7 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
           ) : null}
 
           <p className="invoice-deposit-note">
-            Each door-unit discount applies to the base door price plus all selected add-ons. Installation is listed separately. The production deposit excludes installation and is based on discounted door units ({currency.format(result.totals.productionDepositBasis || 0)}).
+            Applicable taxes, if any, are not included. This quote is valid for thirty (30) days. Production will commence upon Prestige’s receipt of a production deposit equal to fifty percent (50%) of the discounted price of all quoted door and window units, including selected add-ons and excluding installation. The remaining product balance is due prior to shipment.
           </p>
         </>
       ) : (
