@@ -1590,22 +1590,15 @@ function drawDoorTotalLine(page, result, startY, fonts, colors) {
     });
   });
 
-  page.drawText("DOOR UNITS TOTAL", {
+  page.drawText("DOORs / WINDOWs", {
     x: x + 10,
-    y: bottom + 17,
-    size: 7.5,
+    y: bottom + 11.5,
+    size: 12,
     font: fonts.bold,
     color: colors.olive
   });
-  page.drawText("All quoted door and window units", {
-    x: x + 10,
-    y: bottom + 7,
-    size: 5.7,
-    font: fonts.regular,
-    color: colors.muted
-  });
 
-  const labels = ["RETAIL", "DISCOUNT", "DOOR TOTAL"];
+  const labels = ["   RETAIL   ", "   DISCOUNT   ", "   TOTAL   "];
   const values = [
     pdfMoney(result.totals.materialRetailSubtotal || 0),
     pdfAccountingDiscount(result.totals.materialDiscountAmount),
@@ -1669,20 +1662,13 @@ function drawInstallationLine(page, result, startY, fonts, colors) {
 
   page.drawText("INSTALLATION", {
     x: x + 10,
-    y: bottom + 17,
-    size: 7.5,
+    y: bottom + 11.5,
+    size: 9,
     font: fonts.bold,
     color: colors.ink
   });
-  page.drawText("Listed separately from door units", {
-    x: x + 10,
-    y: bottom + 7,
-    size: 5.7,
-    font: fonts.regular,
-    color: colors.muted
-  });
 
-  const labels = ["RETAIL", "DISCOUNT", "INSTALLATION PRICE"];
+  const labels = ["   RETAIL   ", "   DISCOUNT   ", "   TOTAL   "];
   const values = [
     pdfMoney(result.totals.installationGross || 0),
     formatDiscountPercent(result.totals.installationDiscountRate),
