@@ -45,7 +45,7 @@ function saveStoredPricing(pricing) {
 }
 
 async function getRepositoryPricing() {
-  const res = await fetch(`${API_BASE}/api/admin/pricing`);
+  const res = await fetch(`${API_BASE}/api/admin/pricing`, { cache: "no-store" });
   return readJson(res, "Could not load repository pricing.");
 }
 
@@ -153,7 +153,7 @@ export async function updateAdminPricing(pricing) {
 export async function resetAdminPricing() {
   clearStoredPricing();
 
-  const res = await fetch(`${API_BASE}/api/admin/pricing`);
+  const res = await fetch(`${API_BASE}/api/admin/pricing`, { cache: "no-store" });
   return readJson(res, "Could not reset pricing.");
 }
 

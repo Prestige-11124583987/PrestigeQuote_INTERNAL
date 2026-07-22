@@ -41,6 +41,8 @@ const WORK_SCOPE_OPTIONS = [
   "Complete all associated finish work."
 ];
 
+const QUOTE_TERMS_NOTICE = "Applicable taxes, if any, are not included. This quote is valid for thirty (30) days. Production will commence upon Prestige’s receipt of a production deposit equal to fifty percent (50%) of the discounted price of all quoted door and window units, including selected add-ons and excluding installation. The remaining product balance is due prior to shipment.";
+
 function capitalizeFirst(value) {
   const text = String(value ?? "").trim();
   return text ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : "";
@@ -865,7 +867,7 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
       setPricing(reset);
       const publicConfig = await getConfig();
       onPricingSaved(publicConfig);
-      setStatus("Pricing on this device reset to the original workbook values.");
+      setStatus("Browser-only pricing edits were removed. This device is now using the repository defaults from EDIT-PRICING-HERE.json.");
     } catch (error) {
       setStatus(error.message);
     } finally {
@@ -884,15 +886,15 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
         <div>
           <h2>Pricing & Options Editor</h2>
           <p className="muted">
-            Update selling prices, add-on names, dropdown options, discounts, and installation pricing. Changes save in this browser and remain available after Render sleeps or redeploys.
+            Temporary changes save only in this browser. To change the defaults for everyone, edit the root-level <code>EDIT-PRICING-HERE.json</code> file in GitHub and redeploy.
           </p>
         </div>
         <div className="button-row">
           <button type="button" className="secondary" onClick={resetPricingChanges} disabled={saving}>
-            Reset Pricing
+            Discard Browser Edits & Use Repository Defaults
           </button>
           <button type="button" onClick={savePricingChanges} disabled={saving}>
-            {saving ? "Saving…" : "Save Pricing"}
+            {saving ? "Saving…" : "Save Changes on This Browser"}
           </button>
         </div>
       </div>
@@ -1178,6 +1180,7 @@ function safePdfText(value) {
     .replace(/[•]/g, "-")
     .replace(/[×]/g, "x")
     .replace(/[–—]/g, "-")
+    .replace(/[’‘]/g, "'")
     .replace(/[^\x20-\x7E]/g, "");
 }
 
@@ -1714,25 +1717,24 @@ async function buildCombinedInvoicePdf(result, supplements) {
   drawWorkScope(firstPage, result, installationBottom, fonts, colors);
 
   const contact = [result.preparedBy?.email, result.preparedBy?.phone].filter(Boolean).join(" | ");
-  firstPage.drawLine({ start: { x: 38, y: 50 }, end: { x: 574, y: 50 }, thickness: 0.5, color: colors.border });
-  firstPage.drawText(
-    `Production deposit is based on discounted door units (${pdfMoney(result.totals.productionDepositBasis)}); installation is listed separately and excluded from the deposit.`,
-    { x: 38, y: 38, size: 5.8, font: regular, color: colors.muted }
-  );
-  if (contact) {
-    drawRightText(firstPage, contact, 574, 38, {
+  firstPage.drawLine({ start: { x: 38, y: 66 }, end: { x: 574, y: 66 }, thickness: 0.5, color: colors.border });
+  const noticeLines = wrapPdfText(QUOTE_TERMS_NOTICE, regular, 5.8, 536, 4);
+  noticeLines.forEach((line, index) => {
+    firstPage.drawText(line, {
+      x: 38,
+      y: 53 - index * 8,
       size: 5.8,
       font: regular,
       color: colors.muted
     });
-  }
-  firstPage.drawText("Pricing is subject to final field verification, approved specifications, freight, lead times, and signed order terms.", {
-    x: 38,
-    y: 24,
-    size: 5.7,
-    font: regular,
-    color: colors.muted
   });
+  if (contact) {
+    drawRightText(firstPage, contact, 574, 14, {
+      size: 5.6,
+      font: regular,
+      color: colors.muted
+    });
+  }
 
   continuationPages.forEach((invoicePage, index) => {
     const page = pdfDoc.addPage([612, 792]);
@@ -1959,8 +1961,8 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
             </div>
           ) : null}
 
-          <p className="invoice-deposit-note">
-            Each door-unit discount applies to the base door price plus all selected add-ons. Installation is listed separately. The production deposit excludes installation and is based on discounted door units ({currency.format(result.totals.productionDepositBasis || 0)}).
+          <p className="invoice-deposit-note quote-terms-notice">
+            {QUOTE_TERMS_NOTICE}
           </p>
         </>
       ) : (

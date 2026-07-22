@@ -21,3 +21,12 @@
 - Repository pricing is now fingerprinted automatically on each deployment.
 - When repository pricing changes, stale full-browser pricing is cleared once so the new defaults—including Retail discounts—take effect.
 - Browser-local edits continue to persist until the repository pricing source changes.
+
+## v2.10
+
+- Added root-level `EDIT-PRICING-HERE.json` for non-coder repository pricing updates.
+- Repository discounts now use whole percentages such as `18` for 18%.
+- Added `EDIT-PRICING-GUIDE.md` with GitHub editing instructions.
+- Renamed the local reset action to **Discard Browser Edits & Use Repository Defaults**.
+- Repository pricing requests bypass browser HTTP cache.
+- Replaced the bottom quote notice with the approved taxes, validity, deposit, and balance language.

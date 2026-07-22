@@ -31,3 +31,11 @@ Browser-local edits are device-specific. Changes made on one salesperson's brows
 ## Calculation rule
 
 The door-unit retail price equals the base door price plus every selected add-on. The door discount applies to that entire amount. Installation is separate. The production deposit equals 50% of the discounted door-unit price and excludes installation.
+
+## Easy Repository Pricing Updates
+
+Edit the root-level `EDIT-PRICING-HERE.json` file to change default prices, discounts, add-on names, installation pricing, and dropdown options without editing application code.
+
+See `EDIT-PRICING-GUIDE.md` for step-by-step instructions. Discounts in this file are entered as whole percentages, so `18` means 18%.
+
+Browser-only salesperson edits can be removed inside **Pricing & Options** by clicking **Discard Browser Edits & Use Repository Defaults**. Clearing browser cache is not required.

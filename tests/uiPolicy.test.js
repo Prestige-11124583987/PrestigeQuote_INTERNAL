@@ -28,4 +28,10 @@ assert.match(appSource, /drawInstallationLine/);
 assert.match(appSource, /total-package-metric/);
 assert.doesNotMatch(appSource, /Installation included:/);
 
+
+assert.match(appSource, /Discard Browser Edits & Use Repository Defaults/);
+assert.match(appSource, /EDIT-PRICING-HERE\.json/);
+assert.match(appSource, /Applicable taxes, if any, are not included\. This quote is valid for thirty \(30\) days\./);
+assert.match(appSource, /The remaining product balance is due prior to shipment\./);
+
 console.log("UI policy test passed.");

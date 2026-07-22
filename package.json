@@ -1,13 +1,13 @@
 {
   "name": "prestige-door-estimator-mvp",
-  "version": "0.2.9",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm:server\" \"npm:client\"",
     "client": "vite --host 0.0.0.0",
     "server": "node server/index.js",
-    "test": "node tests/pricingEngine.test.js && node tests/invoiceLayout.test.js && node tests/uiPolicy.test.js && node tests/pricingStorage.test.js",
+    "test": "node tests/pricingEngine.test.js && node tests/invoiceLayout.test.js && node tests/uiPolicy.test.js && node tests/pricingStorage.test.js && node tests/editablePricing.test.js",
     "build": "vite build",
     "start": "node server/index.js"
   },
