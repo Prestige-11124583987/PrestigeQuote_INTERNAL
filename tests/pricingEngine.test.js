@@ -15,6 +15,10 @@ const quote = {
   discountTier: "Low",
   installationDiscountRate: 0.15,
   productionDepositRate: 0.5,
+  workScope: [
+    "Furnish new Prestige door(s)/window(s).",
+    "Install Prestige door(s)/window(s)."
+  ],
   units: [
     {
       id: 1,
@@ -61,18 +65,9 @@ assert.equal(result.units[0].unitRetailPrice, 10040);
 assert.equal(result.units[0].discountRate, 0.4);
 assert.equal(result.units[0].unitPrice, 6024);
 assert.equal(result.units[0].lineMaterialRevenue, 6024);
-assert.equal(result.units[0].lineInstallationGross, 1500);
-assert.equal(result.units[0].lineInstallationDiscountAmount, 225);
-assert.equal(result.units[0].lineInstallationNet, 1275);
-assert.equal(result.units[0].linePackageRetail, 11540);
-assert.equal(result.units[0].linePackageDiscountAmount, 4241);
-assert.equal(result.units[0].linePackagePrice, 7299);
 
 assert.equal(result.units[1].unitRetailPrice, 6600);
 assert.equal(result.units[1].unitPrice, 3960);
-assert.equal(result.units[1].linePackageRetail, 8100);
-assert.equal(result.units[1].linePackageDiscountAmount, 2865);
-assert.equal(result.units[1].linePackagePrice, 5235);
 
 assert.equal(result.totals.materialSubtotal, 9984);
 assert.equal(result.totals.installationGross, 3000);
@@ -81,6 +76,12 @@ assert.equal(result.totals.installationNet, 2550);
 assert.equal(result.totals.quoteTotal, 12534);
 assert.equal(result.totals.productionDepositBasis, 9984);
 assert.equal(result.totals.productionDepositDue, 4992);
+assert.deepEqual(result.workScope, [
+  "Furnish new Prestige door(s)/window(s).",
+  "Install Prestige door(s)/window(s)."
+]);
+assert.equal("lineInstallationGross" in result.units[0], false);
+assert.equal("linePackagePrice" in result.units[0], false);
 
 assert.equal("internal" in result, false);
 assert.equal("lineCost" in result.units[0], false);
@@ -107,6 +108,10 @@ const fullDoorUnitDiscountQuote = {
   discountTier: "Low",
   installationDiscountRate: 0,
   productionDepositRate: 0.5,
+  workScope: [
+    "Furnish new Prestige door(s)/window(s).",
+    "Install Prestige door(s)/window(s)."
+  ],
   units: [
     {
       id: 1,

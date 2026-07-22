@@ -34,6 +34,17 @@ const today = new Intl.DateTimeFormat("en-US", {
 
 const ADD_ON_DRIVERS = ["SF", "Glass", "Slabs", "Each"];
 const SPECIAL_REFERENCE_LISTS = new Set(["Styles"]);
+const WORK_SCOPE_OPTIONS = [
+  "Furnish new Prestige door(s)/window(s).",
+  "Remove existing Door(s).",
+  "Install Prestige door(s)/window(s).",
+  "Complete all associated finish work."
+];
+
+function capitalizeFirst(value) {
+  const text = String(value ?? "").trim();
+  return text ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : "";
+}
 
 function round2(value) {
   return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
@@ -108,6 +119,28 @@ function toggleAddOn(quote, unitId, addOnName) {
   };
 }
 
+function toggleWorkScope(quote, scopeItem) {
+  const selected = new Set(quote.workScope || []);
+  if (selected.has(scopeItem)) selected.delete(scopeItem);
+  else selected.add(scopeItem);
+  return { ...quote, workScope: WORK_SCOPE_OPTIONS.filter((item) => selected.has(item)) };
+}
+
+function duplicateUnit(quote, unitId, nextId) {
+  const index = quote.units.findIndex((unit) => unit.id === unitId);
+  if (index < 0) return quote;
+  const source = quote.units[index];
+  const duplicate = {
+    ...source,
+    id: nextId,
+    name: source.name ? `${source.name} Copy` : `Unit ${nextId}`,
+    addOns: { ...(source.addOns || {}) }
+  };
+  const units = [...quote.units];
+  units.splice(index + 1, 0, duplicate);
+  return { ...quote, units };
+}
+
 function Field({ label, children }) {
   return (
     <label className="field">
@@ -180,7 +213,7 @@ function QuoteHeader({ quote, setQuote, config }) {
     <section className="card setup-card">
       <div className="section-header">
         <div>
-          <h2>Quote setup</h2>
+          <h2>Quote Setup</h2>
           <p className="muted">Customer type and tier drive the default material discount.</p>
         </div>
       </div>
@@ -298,30 +331,58 @@ function QuoteHeader({ quote, setQuote, config }) {
           }
         />
       </div>
+
+      <div className="divider" />
+
+      <div className="work-scope-editor">
+        <h3>Work Scope</h3>
+        <p className="small muted">Select the scope items that should appear on this quote.</p>
+        <div className="scope-option-grid">
+          {WORK_SCOPE_OPTIONS.map((scopeItem) => (
+            <label className="scope-option" key={scopeItem}>
+              <input
+                type="checkbox"
+                checked={(quote.workScope || []).includes(scopeItem)}
+                onChange={() => setQuote(toggleWorkScope(quote, scopeItem))}
+              />
+              <span>{scopeItem}</span>
+            </label>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
 
-function UnitEditor({ unit, quote, setQuote, config }) {
+function UnitEditor({ unit, quote, setQuote, config, onDuplicate }) {
   const totalSf = unitTotalSf(unit);
   const availableAddOns = config?.addOns || [];
 
   return (
     <section className="card unit-card">
       <div className="unit-title">
-        <h3>{unit.name || `Unit ${unit.id}`}</h3>
-        <button
-          type="button"
-          className="danger secondary"
-          onClick={() =>
-            setQuote({
-              ...quote,
-              units: quote.units.filter((candidate) => candidate.id !== unit.id)
-            })
-          }
-        >
-          Remove
-        </button>
+        <h3>{capitalizeFirst(unit.name || `Unit ${unit.id}`)}</h3>
+        <div className="unit-card-actions">
+          <button
+            type="button"
+            className="secondary small-button duplicate-unit-button"
+            onClick={() => onDuplicate(unit.id)}
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            className="danger secondary small-button"
+            onClick={() =>
+              setQuote({
+                ...quote,
+                units: quote.units.filter((candidate) => candidate.id !== unit.id)
+              })
+            }
+          >
+            Remove
+          </button>
+        </div>
       </div>
 
       <div className="grid four">
@@ -372,7 +433,7 @@ function UnitEditor({ unit, quote, setQuote, config }) {
           }
         />
         <NumberField
-          label="Total SF override"
+          label="Total SF Override"
           value={unit.totalSf || ""}
           onChange={(totalSf) =>
             setQuote(updateUnit(quote, unit.id, { totalSf }))
@@ -457,7 +518,7 @@ function UnitEditor({ unit, quote, setQuote, config }) {
               checked={Boolean(unit.addOns?.[addOn.name])}
               onChange={() => setQuote(toggleAddOn(quote, unit.id, addOn.name))}
             />
-            <span>{addOn.name}</span>
+            <span>{capitalizeFirst(addOn.name)}</span>
             <em>{addOn.driver}</em>
           </label>
         ))}
@@ -483,13 +544,13 @@ function PricingGuide({ config }) {
     <section className="card pricing-guide">
       <div className="section-header">
         <div>
-          <h2>Prestige price guide</h2>
+          <h2>Prestige Price Guide</h2>
           <p className="muted">
             Quick reference for the current sell-side prices used by the quote engine.
           </p>
         </div>
         <label className="inline-control">
-          View add-on prices for
+          View Add-On Prices For
           <select value={selectedStyle} onChange={(e) => setSelectedStyle(e.target.value)}>
             {styleNames.map((style) => (
               <option value={style} key={style}>{style}</option>
@@ -518,12 +579,12 @@ function PricingGuide({ config }) {
       </div>
 
       <details className="pricing-details">
-        <summary>Add-on Prestige prices for {selectedStyle}</summary>
+        <summary>Add-On Prestige Prices for {selectedStyle}</summary>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Add-on</th>
+                <th>Add-On</th>
                 <th>Driver</th>
                 <th>Prestige Price</th>
               </tr>
@@ -578,10 +639,12 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
 
   if (!pricing) {
     return (
-      <section className="card">
-        <h2>Pricing & options editor</h2>
-        <p>{loadError || "Loading pricing controls…"}</p>
-      </section>
+      <details id="pricing-controls" className="card internal pricing-admin pricing-disclosure">
+        <summary className="pricing-summary">
+          <span>Pricing & Options</span>
+          <small>{loadError || "Loading pricing controls…"}</small>
+        </summary>
+      </details>
     );
   }
 
@@ -811,10 +874,15 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
   }
 
   return (
-    <section id="pricing-controls" className="card internal pricing-admin">
+    <details id="pricing-controls" className="card internal pricing-admin pricing-disclosure">
+      <summary className="pricing-summary">
+        <span>Pricing & Options</span>
+        <small>Sell prices, add-on names, discounts, installation pricing, and dropdown choices</small>
+      </summary>
+      <div className="pricing-admin-content">
       <div className="section-header">
         <div>
-          <h2>Pricing & options editor</h2>
+          <h2>Pricing & Options Editor</h2>
           <p className="muted">
             Update selling prices, add-on names, dropdown options, discounts, and installation pricing. Changes save in this browser and remain available after Render sleeps or redeploys.
           </p>
@@ -829,7 +897,7 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
         </div>
       </div>
 
-      <h3>Base style pricing</h3>
+      <h3>Base Style Pricing</h3>
       <div className="add-row">
         <Field label="New Style Name">
           <input value={newStyle.name} onChange={(e) => setNewStyle({ ...newStyle, name: e.target.value })} />
@@ -875,7 +943,7 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
         </table>
       </div>
 
-      <h3>Add-on pricing</h3>
+      <h3>Add-On Pricing</h3>
       <p className="small muted">
         Add-ons become checkboxes in the unit editor. Rename them or edit the selling price for each door style.
       </p>
@@ -898,7 +966,7 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
         <table className="editable-table compact">
           <thead>
             <tr>
-              <th>Add-on</th>
+              <th>Add-On</th>
               <th>Driver</th>
               <th>Units Label</th>
               {styleNames.map((styleName) => (
@@ -948,9 +1016,9 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
         </table>
       </div>
 
-      <h3>Discount rules</h3>
+      <h3>Discount Rules</h3>
       <p className="small muted">
-        Add customer types or discount tiers in Dropdown options below. Then enter the default discount percentage here.
+        Add customer types or discount tiers in Dropdown Options below. Then enter the default discount percentage here.
       </p>
       <div className="table-wrap">
         <table className="editable-table compact">
@@ -980,16 +1048,16 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
         </table>
       </div>
 
-      <h3>Install pricing</h3>
+      <h3>Installation Pricing</h3>
       <p className="small muted">
-        Build Type dropdown options pull from this table. Add new build types below under Dropdown options, then set the install price here.
+        Build Type dropdown options pull from this table. Add new build types below under Dropdown options, then set the installation price here.
       </p>
       <div className="table-wrap narrow-table">
         <table className="editable-table">
           <thead>
             <tr>
               <th>Build Type</th>
-              <th>Install Price / Unit</th>
+              <th>Installation Price / Unit</th>
             </tr>
           </thead>
           <tbody>
@@ -1010,7 +1078,7 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
         </table>
       </div>
 
-      <h3>Dropdown options</h3>
+      <h3>Dropdown Options</h3>
       <p className="small muted">
         These options appear throughout the quote builder. Styles and add-ons are managed in their dedicated sections above because they also need pricing inputs.
       </p>
@@ -1047,7 +1115,8 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
           </div>
         ))}
       </div>
-    </section>
+    </div>
+    </details>
   );
 }
 
@@ -1147,14 +1216,14 @@ function drawRightText(page, text, xRight, y, options) {
   page.drawText(safe, { ...options, x: xRight - width, y });
 }
 
-function drawMetricCard(page, label, value, x, y, width, fonts, colors, note = "") {
+function drawMetricCard(page, label, value, x, y, width, fonts, colors, note = "", highlight = false) {
   page.drawRectangle({
     x,
     y,
     width,
     height: 56,
-    color: colors.soft,
-    borderColor: colors.border,
+    color: highlight ? colors.olive : colors.soft,
+    borderColor: highlight ? colors.olive : colors.border,
     borderWidth: 0.7
   });
   page.drawText(label.toUpperCase(), {
@@ -1162,14 +1231,14 @@ function drawMetricCard(page, label, value, x, y, width, fonts, colors, note = "
     y: y + 38,
     size: 7,
     font: fonts.bold,
-    color: colors.muted
+    color: highlight ? colors.white : colors.muted
   });
   page.drawText(pdfMoney(value), {
     x: x + 9,
     y: y + 18,
     size: 15,
     font: fonts.bold,
-    color: colors.ink
+    color: highlight ? colors.white : colors.ink
   });
   if (note) {
     page.drawText(safePdfText(note), {
@@ -1177,7 +1246,7 @@ function drawMetricCard(page, label, value, x, y, width, fonts, colors, note = "
       y: y + 6,
       size: 5.7,
       font: fonts.regular,
-      color: colors.muted
+      color: highlight ? colors.white : colors.muted
     });
   }
 }
@@ -1292,11 +1361,10 @@ function buildDoorPdfDescription(unit) {
   const summary = [formatUnitSummary(unit), formatAdditionalSpecs(unit)]
     .filter(Boolean)
     .join(" | ");
-  const addOns = unit.selectedAddOns?.length ? `Add-ons: ${unit.selectedAddOns.join(", ")}` : "";
-  const install = unit.lineInstallationGross
-    ? `Installation included: ${pdfMoney(unit.lineInstallationNet || 0)}`
+  const addOns = unit.selectedAddOns?.length
+    ? `Add-Ons: ${unit.selectedAddOns.map(capitalizeFirst).join(", ")}`
     : "";
-  return [summary, addOns, install].filter(Boolean).join(" | ");
+  return [summary, addOns].filter(Boolean).join(" | ");
 }
 
 function createDoorRowLayout(unit, fonts, descriptionWidth) {
@@ -1305,7 +1373,7 @@ function createDoorRowLayout(unit, fonts, descriptionWidth) {
   const descriptionSize = 6.1;
   const descriptionLineHeight = 7.1;
   const titleLines = wrapPdfText(
-    unit.name || "Door",
+    capitalizeFirst(unit.name || "Door"),
     fonts.bold,
     titleSize,
     descriptionWidth,
@@ -1339,7 +1407,7 @@ function paginateDoorRows(units, fonts) {
   const descriptionWidth = 205 - 14;
   const rows = (units || []).map((unit) => createDoorRowLayout(unit, fonts, descriptionWidth));
   return paginateIndivisibleRows(rows, {
-    firstPageCapacity: 390,
+    firstPageCapacity: 360,
     continuationCapacity: 556,
     maxFirstPageRows: 5
   });
@@ -1348,7 +1416,7 @@ function paginateDoorRows(units, fonts) {
 function drawLineItemsTable(page, rowLayouts, startY, fonts, colors, startIndex = 0) {
   const x = 38;
   const widths = [24, 205, 36, 80, 80, 111];
-  const headers = ["#", "DOOR / SPECIFICATIONS", "QTY", "RETAIL", "DISCOUNT", "PACKAGE PRICE"];
+  const headers = ["#", "DOOR / SPECIFICATIONS", "QTY", "RETAIL", "DISCOUNT", "DOOR PRICE"];
   const headerHeight = 24;
 
   page.drawRectangle({ x, y: startY - headerHeight, width: 536, height: headerHeight, color: colors.ink });
@@ -1422,9 +1490,9 @@ function drawLineItemsTable(page, rowLayouts, startY, fonts, colors, startIndex 
 
     const values = [
       String(unit.quantity || ""),
-      pdfMoney(unit.linePackageRetail || 0),
-      unit.linePackageDiscountAmount ? `-${pdfMoney(unit.linePackageDiscountAmount)}` : pdfMoney(0),
-      pdfMoney(unit.linePackagePrice || 0)
+      pdfMoney(unit.lineRetailRevenue || 0),
+      unit.lineDiscountAmount ? `-${pdfMoney(unit.lineDiscountAmount)}` : pdfMoney(0),
+      pdfMoney(unit.lineMaterialRevenue || 0)
     ];
     const starts = [x + widths[0] + widths[1], x + widths[0] + widths[1] + widths[2], x + widths[0] + widths[1] + widths[2] + widths[3], x + widths[0] + widths[1] + widths[2] + widths[3] + widths[4]];
     const cellWidths = widths.slice(2);
@@ -1445,6 +1513,137 @@ function drawLineItemsTable(page, rowLayouts, startY, fonts, colors, startIndex 
   });
 
   return y;
+}
+
+function drawInstallationLine(page, result, startY, fonts, colors) {
+  const x = 38;
+  const widths = [265, 80, 80, 111];
+  const top = startY - 7;
+  const height = 34;
+  const bottom = top - height;
+
+  page.drawRectangle({
+    x,
+    y: bottom,
+    width: 536,
+    height,
+    color: colors.soft,
+    borderColor: colors.border,
+    borderWidth: 0.6
+  });
+
+  let cursorX = x;
+  widths.slice(0, -1).forEach((width) => {
+    cursorX += width;
+    page.drawLine({
+      start: { x: cursorX, y: bottom },
+      end: { x: cursorX, y: top },
+      thickness: 0.35,
+      color: colors.border
+    });
+  });
+
+  page.drawText("INSTALLATION", {
+    x: x + 10,
+    y: bottom + 17,
+    size: 7.5,
+    font: fonts.bold,
+    color: colors.ink
+  });
+  page.drawText("Listed separately from door units", {
+    x: x + 10,
+    y: bottom + 7,
+    size: 5.7,
+    font: fonts.regular,
+    color: colors.muted
+  });
+
+  const labels = ["RETAIL", "DISCOUNT", "INSTALLATION PRICE"];
+  const values = [
+    pdfMoney(result.totals.installationGross || 0),
+    result.totals.installationDiscountAmount
+      ? `-${pdfMoney(result.totals.installationDiscountAmount)}`
+      : pdfMoney(0),
+    pdfMoney(result.totals.installationNet || 0)
+  ];
+
+  let valueX = x + widths[0];
+  values.forEach((value, index) => {
+    const width = widths[index + 1];
+    const labelWidth = fonts.bold.widthOfTextAtSize(labels[index], 5.4);
+    page.drawText(labels[index], {
+      x: valueX + (width - labelWidth) / 2,
+      y: bottom + 22,
+      size: 5.4,
+      font: fonts.bold,
+      color: colors.muted
+    });
+    const font = index === 2 ? fonts.bold : fonts.regular;
+    const size = index === 2 ? 7.4 : 7;
+    const textWidth = font.widthOfTextAtSize(value, size);
+    page.drawText(value, {
+      x: valueX + (width - textWidth) / 2,
+      y: bottom + 8,
+      size,
+      font,
+      color: colors.ink
+    });
+    valueX += width;
+  });
+
+  return bottom;
+}
+
+function drawWorkScope(page, result, startY, fonts, colors) {
+  const scopeItems = (result.workScope || []).filter(Boolean);
+  if (!scopeItems.length) return startY;
+
+  const top = startY - 7;
+  page.drawText("WORK SCOPE", {
+    x: 38,
+    y: top - 7,
+    size: 6.5,
+    font: fonts.bold,
+    color: colors.olive
+  });
+
+  const columnWidth = 268;
+  const rowHeight = 14;
+  scopeItems.forEach((scopeItem, index) => {
+    const column = index % 2;
+    const row = Math.floor(index / 2);
+    const x = 38 + column * columnWidth;
+    const y = top - 22 - row * rowHeight;
+    page.drawRectangle({
+      x,
+      y: y - 1,
+      width: 6,
+      height: 6,
+      borderColor: colors.olive,
+      borderWidth: 0.7
+    });
+    page.drawLine({
+      start: { x: x + 1.2, y: y + 1.5 },
+      end: { x: x + 2.7, y },
+      thickness: 0.7,
+      color: colors.olive
+    });
+    page.drawLine({
+      start: { x: x + 2.7, y },
+      end: { x: x + 5, y: y + 4 },
+      thickness: 0.7,
+      color: colors.olive
+    });
+    page.drawText(safePdfText(scopeItem), {
+      x: x + 10,
+      y: y - 1,
+      size: 6,
+      font: fonts.regular,
+      color: colors.ink
+    });
+  });
+
+  return top - 22 - Math.ceil(scopeItems.length / 2) * rowHeight;
 }
 
 async function ensurePdfLibrary() {
@@ -1496,37 +1695,41 @@ async function buildCombinedInvoicePdf(result, supplements) {
   ];
   const metricWidth = 130;
   metrics.forEach((metric, index) => {
-    drawMetricCard(firstPage, metric[0], metric[1], 38 + index * 135.3, 552, metricWidth, fonts, colors, metric[2]);
+    drawMetricCard(
+      firstPage,
+      metric[0],
+      metric[1],
+      38 + index * 135.3,
+      552,
+      metricWidth,
+      fonts,
+      colors,
+      metric[2],
+      index === 2
+    );
   });
 
-  drawLineItemsTable(firstPage, firstPageRows, 532, fonts, colors, 0);
+  const tableBottom = drawLineItemsTable(firstPage, firstPageRows, 532, fonts, colors, 0);
+  const installationBottom = drawInstallationLine(firstPage, result, tableBottom, fonts, colors);
+  drawWorkScope(firstPage, result, installationBottom, fonts, colors);
 
-  firstPage.drawText("PAYMENT SUMMARY", {
-    x: 38,
-    y: 112,
-    size: 7,
-    font: bold,
-    color: colors.olive
-  });
-  firstPage.drawText(
-    `Line-item package prices include installation. Each door-unit discount applies to base door price plus all selected add-ons. Production deposit excludes installation and is based on discounted door units (${pdfMoney(result.totals.productionDepositBasis)}).`,
-    { x: 38, y: 98, size: 6.6, font: regular, color: colors.muted }
-  );
   const contact = [result.preparedBy?.email, result.preparedBy?.phone].filter(Boolean).join(" | ");
+  firstPage.drawLine({ start: { x: 38, y: 50 }, end: { x: 574, y: 50 }, thickness: 0.5, color: colors.border });
+  firstPage.drawText(
+    `Production deposit is based on discounted door units (${pdfMoney(result.totals.productionDepositBasis)}); installation is listed separately and excluded from the deposit.`,
+    { x: 38, y: 38, size: 5.8, font: regular, color: colors.muted }
+  );
   if (contact) {
-    firstPage.drawText(safePdfText(contact), {
-      x: 38,
-      y: 84,
-      size: 6.6,
+    drawRightText(firstPage, contact, 574, 38, {
+      size: 5.8,
       font: regular,
       color: colors.muted
     });
   }
-  firstPage.drawLine({ start: { x: 38, y: 58 }, end: { x: 574, y: 58 }, thickness: 0.5, color: colors.border });
   firstPage.drawText("Pricing is subject to final field verification, approved specifications, freight, lead times, and signed order terms.", {
     x: 38,
-    y: 43,
-    size: 6.2,
+    y: 24,
+    size: 5.7,
     font: regular,
     color: colors.muted
   });
@@ -1691,10 +1894,10 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
             <div><span>Prepared By</span><strong>{result.preparedBy?.name || "—"}</strong></div>
           </div>
           <div className="invoice-metrics">
-            <div><span>Package Retail Price</span><strong>{currency.format(result.totals.suggestedRetail || 0)}</strong><small>Before discounts</small></div>
-            <div><span>Total Discounts</span><strong>-{currency.format(result.totals.totalDiscountAmount || 0)}</strong><small>Door units + installation</small></div>
-            <div><span>Total Package Price</span><strong>{currency.format(result.totals.quoteTotal || 0)}</strong><small>After all discounts</small></div>
-            <div><span>Production Deposit</span><strong>{currency.format(result.totals.productionDepositDue || 0)}</strong><small>Discounted door units only</small></div>
+            <div><span>Package Retail Price</span><strong>{currency.format(result.totals.suggestedRetail || 0)}</strong><small>Before Discounts</small></div>
+            <div><span>Total Discounts</span><strong>-{currency.format(result.totals.totalDiscountAmount || 0)}</strong><small>Door Units + Installation</small></div>
+            <div className="total-package-metric"><span>Total Package Price</span><strong>{currency.format(result.totals.quoteTotal || 0)}</strong><small>After All Discounts</small></div>
+            <div><span>Production Deposit</span><strong>{currency.format(result.totals.productionDepositDue || 0)}</strong><small>Discounted Door Units Only</small></div>
           </div>
         </>
       ) : (
@@ -1709,7 +1912,7 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
             <th>Qty</th>
             <th>Retail</th>
             <th>Discount</th>
-            <th>Package Price</th>
+            <th>Door Price</th>
           </tr>
         </thead>
         <tbody>
@@ -1717,27 +1920,51 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
             <tr key={unit.id}>
               <td>{startIndex + index + 1}</td>
               <td>
-                <strong>{unit.name || `Door ${startIndex + index + 1}`}</strong>
+                <strong>{capitalizeFirst(unit.name || `Door ${startIndex + index + 1}`)}</strong>
                 <span>{formatUnitSummary(unit)}</span>
                 {formatAdditionalSpecs(unit) ? <span>{formatAdditionalSpecs(unit)}</span> : null}
-                {unit.selectedAddOns?.length ? <span>Add-ons: {unit.selectedAddOns.join(", ")}</span> : null}
-                {unit.lineInstallationGross ? <span>Installation included: {currency.format(unit.lineInstallationNet || 0)}</span> : null}
+                {unit.selectedAddOns?.length ? <span>Add-Ons: {unit.selectedAddOns.map(capitalizeFirst).join(", ")}</span> : null}
               </td>
               <td>{unit.quantity}</td>
-              <td>{currency.format(unit.linePackageRetail || 0)}</td>
-              <td>{unit.linePackageDiscountAmount ? `-${currency.format(unit.linePackageDiscountAmount)}` : currency.format(0)}</td>
-              <td>{currency.format(unit.linePackagePrice || 0)}</td>
+              <td>{currency.format(unit.lineRetailRevenue || 0)}</td>
+              <td>{unit.lineDiscountAmount ? `-${currency.format(unit.lineDiscountAmount)}` : currency.format(0)}</td>
+              <td>{currency.format(unit.lineMaterialRevenue || 0)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
       {firstPage ? (
-        <p className="invoice-deposit-note">
-          Each door-unit discount applies to the base door price plus all selected add-ons. Line-item package prices include installation, but the production deposit excludes installation and is based on discounted door units ({currency.format(result.totals.productionDepositBasis || 0)}).
-        </p>
+        <>
+          <div className="invoice-install-strip">
+            <div>
+              <span>Installation</span>
+              <small>Listed Separately from Door Units</small>
+            </div>
+            <div className="installation-values">
+              <span>Retail <strong>{currency.format(result.totals.installationGross || 0)}</strong></span>
+              <span>Discount <strong>-{currency.format(result.totals.installationDiscountAmount || 0)}</strong></span>
+              <span>Installation Price <strong>{currency.format(result.totals.installationNet || 0)}</strong></span>
+            </div>
+          </div>
+
+          {(result.workScope || []).length ? (
+            <div className="quote-work-scope">
+              <h3>Work Scope</h3>
+              <div>
+                {result.workScope.map((scopeItem) => (
+                  <p key={scopeItem}>✓ {scopeItem}</p>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <p className="invoice-deposit-note">
+            Each door-unit discount applies to the base door price plus all selected add-ons. Installation is listed separately. The production deposit excludes installation and is based on discounted door units ({currency.format(result.totals.productionDepositBasis || 0)}).
+          </p>
+        </>
       ) : (
-        <p className="invoice-deposit-note">Package totals and production deposit appear on quote page 1.</p>
+        <p className="invoice-deposit-note">Package Totals and Production Deposit Appear on Quote Page 1.</p>
       )}
     </div>
   );
@@ -1867,7 +2094,7 @@ export default function App() {
     <main className="app-shell">
       <header className="app-header">
         <div>
-          <p className="eyebrow">Prestige estimator MVP</p>
+          <p className="eyebrow">Prestige Estimator</p>
           <h1>Estimate Builder</h1>
           <p>
             Internal quote builder with browser-local pricing controls and combined quote PDFs.
@@ -1904,6 +2131,7 @@ export default function App() {
         <h2>Units</h2>
         <button
           type="button"
+          className="add-unit-button"
           onClick={() =>
             setQuote({
               ...quote,
@@ -1911,7 +2139,7 @@ export default function App() {
             })
           }
         >
-          Add Unit
+          + Add Unit
         </button>
       </div>
 
@@ -1922,6 +2150,7 @@ export default function App() {
           quote={quote}
           setQuote={setQuote}
           config={config}
+          onDuplicate={(unitId) => setQuote(duplicateUnit(quote, unitId, nextUnitId))}
         />
       ))}
 

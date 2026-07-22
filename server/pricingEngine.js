@@ -207,24 +207,8 @@ export function calculateQuote(quote, data) {
   const installationDiscountAmount = installationGross * installationDiscountRate;
   const installationNet = installationGross - installationDiscountAmount;
 
-  // Allocate installation and its discount to each door line so the invoice
-  // presents a true installed package price per line item.
-  const unitsWithPackagePricing = calculatedUnits.map((unit) => {
-    const lineInstallationGross = unit.installPricePerUnit * unit.quantity;
-    const lineInstallationDiscountAmount = lineInstallationGross * installationDiscountRate;
-    const lineInstallationNet = lineInstallationGross - lineInstallationDiscountAmount;
-
-    return {
-      ...unit,
-      lineInstallationGross: money(lineInstallationGross),
-      lineInstallationDiscountAmount: money(lineInstallationDiscountAmount),
-      lineInstallationNet: money(lineInstallationNet),
-      linePackageRetail: money(unit.lineRetailRevenue + lineInstallationGross),
-      linePackageDiscountAmount: money(unit.lineDiscountAmount + lineInstallationDiscountAmount),
-      linePackagePrice: money(unit.lineMaterialRevenue + lineInstallationNet)
-    };
-  });
-
+  // Installation is calculated at the quote level and presented as its own
+  // separate line. It is intentionally not allocated into individual door rows.
   const suggestedRetail = materialRetailSubtotal + installationGross;
   const totalDiscountAmount = materialDiscountAmount + installationDiscountAmount;
   const quoteTotal = materialSubtotal + installationNet;
@@ -234,7 +218,7 @@ export function calculateQuote(quote, data) {
   const productionDepositBasis = materialSubtotal;
   const productionDepositDue = productionDepositBasis * productionDepositRate;
 
-  const externalUnits = unitsWithPackagePricing.map((unit) => ({
+  const externalUnits = calculatedUnits.map((unit) => ({
     id: unit.id,
     name: unit.name,
     style: unit.style,
@@ -258,14 +242,7 @@ export function calculateQuote(quote, data) {
     unitPrice: unit.unitPriceAfterDiscount,
     lineRetailRevenue: unit.lineRetailRevenue,
     lineDiscountAmount: unit.lineDiscountAmount,
-    lineMaterialRevenue: unit.lineMaterialRevenue,
-    installPricePerUnit: unit.installPricePerUnit,
-    lineInstallationGross: unit.lineInstallationGross,
-    lineInstallationDiscountAmount: unit.lineInstallationDiscountAmount,
-    lineInstallationNet: unit.lineInstallationNet,
-    linePackageRetail: unit.linePackageRetail,
-    linePackageDiscountAmount: unit.linePackageDiscountAmount,
-    linePackagePrice: unit.linePackagePrice
+    lineMaterialRevenue: unit.lineMaterialRevenue
   }));
 
   const result = {
@@ -274,6 +251,7 @@ export function calculateQuote(quote, data) {
     preparedBy: quote.preparedBy || {},
     customerType: quote.customerType || "Retail",
     discountTier: quote.discountTier || "Low",
+    workScope: Array.isArray(quote.workScope) ? quote.workScope.filter(Boolean) : [],
     units: externalUnits,
     totals: {
       materialRetailSubtotal: money(materialRetailSubtotal),
@@ -311,6 +289,7 @@ export function makeSampleQuote() {
     discountTier: "",
     installationDiscountRate: 0,
     productionDepositRate: 0.5,
+    workScope: [],
     units: []
   };
 }

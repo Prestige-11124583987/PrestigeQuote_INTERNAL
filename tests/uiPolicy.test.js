@@ -18,4 +18,14 @@ function assertNoInternalPricingKeys(value, path = "pricingData") {
 }
 
 assertNoInternalPricingKeys(pricingData);
+
+assert.match(appSource, /className="add-unit-button"/);
+assert.match(appSource, /className="secondary small-button duplicate-unit-button"/);
+assert.match(appSource, /<details id="pricing-controls"/);
+assert.doesNotMatch(appSource, /<details id="pricing-controls"[^>]*open/);
+assert.match(appSource, /Furnish new Prestige door\(s\)\/window\(s\)\./);
+assert.match(appSource, /drawInstallationLine/);
+assert.match(appSource, /total-package-metric/);
+assert.doesNotMatch(appSource, /Installation included:/);
+
 console.log("UI policy test passed.");

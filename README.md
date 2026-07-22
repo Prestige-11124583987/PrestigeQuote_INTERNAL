@@ -1,5 +1,13 @@
 # Prestige Internal Quote Tool v2.7
 
+## v2.8 Quote Builder Updates
+
+- Pricing & Options is collapsed by default.
+- Unit cards can be duplicated with all specifications and add-ons.
+- Work Scope items can be selected for each quote.
+- Installation appears as one separate quote line instead of being allocated to each door.
+- Total Package Price is highlighted in Prestige green.
+
 Internal quote builder for Prestige Iron Doors & Glazing.
 
 ## Current behavior
