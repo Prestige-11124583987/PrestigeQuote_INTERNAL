@@ -6,7 +6,7 @@ The `invoice-supplements/` folder controls approved PDFs that every salesperson 
 
 Only upload final approved documents. Do not retype, rewrite, summarize, or otherwise alter legal or warranty language unless the revised language has been explicitly approved.
 
-No default supplements ship in v2.15 because the prior retyped v2.14 documents were removed.
+The approved combined `01-Door-Order-Process-and-Product-Warranty.pdf` ships in v2.16 and appends behind every Quote.
 
 ## Add a Shared PDF
 

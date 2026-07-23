@@ -32,6 +32,7 @@ function makeStyles(basePricesPerSquareFoot = {}) {
 function makeAddOns(addOns = []) {
   return addOns.map((addOn) => ({
     name: String(addOn?.name || "Untitled Add-on").trim(),
+    active: addOn?.active !== false,
     units: String(addOn?.unitLabel || addOn?.chargeBy || "SF"),
     driver: String(addOn?.chargeBy || "SF"),
     prices: Object.fromEntries(

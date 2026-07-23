@@ -1,5 +1,17 @@
 # Prestige Internal Quote Tool — Change Log
 
+## v2.16 — Add-On Visibility and Revised Pricing Defaults
+
+- Added an **On / Off** toggle for every add-on inside **Pricing & Options**.
+- Inactive add-ons are hidden from unit inputs and the Price Guide without deleting their names or prices.
+- Inactive add-ons are excluded from calculations and customer-facing specifications, even if an older quote payload still marks one as selected.
+- Added repository-wide `active: true/false` support in `EDIT-PRICING-HERE.json`.
+- Carried over the revised base prices, add-on names, add-on prices, discount percentages, installation prices, and dropdown options supplied for this release.
+- Set Retail discounts to 15% / 20%, Builder discounts to 30% / 35%, and Distributor discounts to 40% / 45%.
+- Added the approved `01-Door-Order-Process-and-Product-Warranty.pdf` to the company-wide supplement folder.
+- Added automated add-on visibility, revised-pricing, approved-supplement, and repository-policy checks.
+- Updated all active repository version references to **v2.16 / 2.16.0**.
+
 ## v2.15 - Replaceable Quote Letterhead and Release Audit
 
 - Added `public/branding/quote-header.png` as the single replaceable Quote letterhead image.

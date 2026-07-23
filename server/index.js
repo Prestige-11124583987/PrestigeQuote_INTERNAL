@@ -102,6 +102,7 @@ function normalizePricingData(input) {
     .map((addOn) => {
       const normalized = {
         name: String(addOn.name || "Untitled Add-on").trim(),
+        active: addOn.active !== false,
         driver: validDriver(addOn.driver),
         units: addOn.units || addOn.driver || "SF",
         prices: {}

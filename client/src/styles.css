@@ -1891,3 +1891,74 @@ button:disabled {
   margin: -2px 0 12px;
   color: #666960;
 }
+
+
+/* Add-on visibility controls */
+.addon-active-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 76px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.addon-active-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.addon-toggle-track {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 18px;
+  border-radius: 999px;
+  background: #b9bbb5;
+  transition: background 140ms ease;
+}
+
+.addon-toggle-track > span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.24);
+  transition: transform 140ms ease;
+}
+
+.addon-active-toggle input:checked + .addon-toggle-track {
+  background: #5d5f13;
+}
+
+.addon-active-toggle input:checked + .addon-toggle-track > span {
+  transform: translateX(16px);
+}
+
+.addon-active-toggle input:focus-visible + .addon-toggle-track {
+  outline: 2px solid #7f821d;
+  outline-offset: 2px;
+}
+
+.addon-toggle-label {
+  min-width: 20px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #52544e;
+}
+
+.inactive-addon-row {
+  opacity: 0.58;
+  background: #f4f4f1;
+}
+
+.inactive-addon-row input:not([type="checkbox"]),
+.inactive-addon-row select {
+  background: #f7f7f5;
+}

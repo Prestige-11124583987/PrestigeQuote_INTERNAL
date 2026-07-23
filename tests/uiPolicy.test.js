@@ -39,6 +39,9 @@ assert.doesNotMatch(additionalSpecsSource, /unit\.buildType/);
 
 
 assert.match(appSource, /Discard Browser Edits & Use Repository Defaults/);
+assert.match(appSource, /Turn this add-on on or off for new quotes/);
+assert.match(appSource, /className="addon-active-toggle"/);
+assert.match(appSource, /updateAddOnField\(index, "active", e\.target\.checked\)/);
 assert.match(appSource, /EDIT-PRICING-HERE\.json/);
 assert.match(appSource, /Applicable taxes, if any, are not included\. This quote is valid for thirty \(30\) days\./);
 assert.match(appSource, /The remaining product balance is due prior to shipment\./);

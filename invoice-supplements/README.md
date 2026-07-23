@@ -8,3 +8,9 @@ Use numbered filenames to control order, for example:
 - `02-Limited-Product-Warranty.pdf`
 
 Important: only place final, approved PDFs here. The prior retyped v2.14 supplements were removed because their source wording had not been approved as verbatim.
+
+Current approved company-wide file:
+
+- `01-Door-Order-Process-and-Product-Warranty.pdf`
+
+Do not edit or retype its warranty language inside the application. Replace the PDF only with a separately approved final document.

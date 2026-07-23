@@ -37,7 +37,7 @@ const quote = {
       glassColor: "Clear ",
       addOns: {
         "Impact Glass": true,
-        "Deadbolt": true
+        "Deadbolt (w/ Pull Handle)": true
       }
     },
     {

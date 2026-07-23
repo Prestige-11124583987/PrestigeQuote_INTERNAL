@@ -14,6 +14,12 @@ assert.equal(fs.existsSync(supplementDirectory), true, "The shared supplement fo
 const sharedFiles = fs.readdirSync(supplementDirectory)
   .filter((name) => name.toLowerCase().endsWith(".pdf"));
 
+assert.equal(
+  sharedFiles.includes("01-Door-Order-Process-and-Product-Warranty.pdf"),
+  true,
+  "The approved combined ordering-process and warranty PDF should ship company-wide."
+);
+
 for (const name of sharedFiles) {
   const bytes = fs.readFileSync(path.join(supplementDirectory, name));
   assert.equal(bytes.subarray(0, 4).toString(), "%PDF", `${name} should be a valid PDF.`);

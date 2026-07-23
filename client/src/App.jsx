@@ -703,6 +703,7 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
       }
       return {
         name: String(addOn.name || "Untitled Add-on").trim(),
+        active: addOn.active !== false,
         driver: ADD_ON_DRIVERS.includes(addOn.driver) ? addOn.driver : "SF",
         units: addOn.units || addOn.driver || "SF",
         prices
@@ -809,6 +810,7 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
       }
       next.addOns.push({
         name,
+        active: true,
         driver: newAddOn.driver || "SF",
         units: newAddOn.units || newAddOn.driver || "SF",
         prices
@@ -897,7 +899,7 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
     <details id="pricing-controls" className="card internal pricing-admin pricing-disclosure">
       <summary className="pricing-summary">
         <span>Pricing & Options</span>
-        <small>Sell prices, add-on names, discounts, installation pricing, and dropdown choices</small>
+        <small>Sell prices, add-on visibility, names, discounts, installation pricing, and dropdown choices</small>
       </summary>
       <div className="pricing-admin-content">
       <div className="section-header">
@@ -965,7 +967,7 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
 
       <h3>Add-On Pricing</h3>
       <p className="small muted">
-        Add-ons become checkboxes in the unit editor. Rename them or edit the selling price for each door style.
+        Use the Active toggle to show or hide an add-on from new quotes without deleting its name or pricing. Rename add-ons or edit the selling price for each door style.
       </p>
       <div className="add-row">
         <Field label="New Add-on Name">
@@ -986,6 +988,7 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
         <table className="editable-table compact">
           <thead>
             <tr>
+              <th>Active</th>
               <th>Add-On</th>
               <th>Driver</th>
               <th>Units Label</th>
@@ -997,7 +1000,18 @@ function PricingAdminPanel({ onPricingSaved, setStatus }) {
           </thead>
           <tbody>
             {pricing.addOns.map((addOn, index) => (
-              <tr key={`${addOn.name}-${index}`}>
+              <tr key={`${addOn.name}-${index}`} className={addOn.active === false ? "inactive-addon-row" : ""}>
+                <td>
+                  <label className="addon-active-toggle" title="Turn this add-on on or off for new quotes">
+                    <input
+                      type="checkbox"
+                      checked={addOn.active !== false}
+                      onChange={(e) => updateAddOnField(index, "active", e.target.checked)}
+                    />
+                    <span className="addon-toggle-track" aria-hidden="true"><span /></span>
+                    <span className="addon-toggle-label">{addOn.active !== false ? "On" : "Off"}</span>
+                  </label>
+                </td>
                 <td>
                   <input
                     value={addOn.name}

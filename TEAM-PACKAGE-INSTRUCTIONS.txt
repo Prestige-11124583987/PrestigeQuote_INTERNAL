@@ -1,5 +1,5 @@
-PRESTIGE INTERNAL QUOTE TOOL v2.15
-PACKAGE VERSION 2.15.0
+PRESTIGE INTERNAL QUOTE TOOL v2.16
+PACKAGE VERSION 2.16.0
 
 QUOTE HEADER
 The Quote preview and generated PDF use public/branding/quote-header.png.
@@ -12,6 +12,7 @@ Team members can change:
 - Base selling prices
 - Add-on names
 - Add-on selling prices
+- Add-on visibility using the On / Off toggle
 - Installation prices
 - Retail, builder, and distributor discounts
 - Dropdown lists
@@ -24,7 +25,7 @@ Edit EDIT-PRICING-HERE.json in GitHub to change defaults used after deployment. 
 
 COMPANY-WIDE QUOTE SUPPLEMENTS
 Only final approved PDFs belong in invoice-supplements. They append behind every generated Quote in filename order after deployment.
-No default supplement PDFs ship in v2.15 because the prior retyped documents were not approved as verbatim.
+The approved 01-Door-Order-Process-and-Product-Warranty.pdf ships in this folder and appends behind every Quote.
 
 BROWSER-ONLY SUPPLEMENTS
 The Quote Supplements card can upload optional PDFs for the current browser. These are not shared with other devices.

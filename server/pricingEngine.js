@@ -104,7 +104,7 @@ export function calculateUnit(unit, quote, data) {
 
   const selected = selectedAddOnNames(unit);
   const addOnLines = data.addOns
-    .filter((addOn) => selected.includes(addOn.name))
+    .filter((addOn) => addOn.active !== false && selected.includes(addOn.name))
     .map((addOn) => {
       const basis = driverBasis(addOn.driver, { ...unit, totalSf, glassSf, slabs });
       const unitPrice = number(addOn.prices?.[style]) * basis;
@@ -157,7 +157,7 @@ export function calculateUnit(unit, quote, data) {
     color: unit.color || "",
     glassTexture: unit.glassTexture || "",
     glassColor: unit.glassColor || "",
-    selectedAddOns: selected,
+    selectedAddOns: addOnLines.map((addOn) => addOn.name),
     addOnLines,
     basePrice: money(basePrice),
     addOnsPrice: money(addOnsPrice),
@@ -302,8 +302,11 @@ export function sanitizePricingForClient(data) {
     ])
   );
 
-  const publicAddOns = (data.addOns || []).map((addOn) => ({
+  const publicAddOns = (data.addOns || [])
+    .filter((addOn) => addOn.active !== false)
+    .map((addOn) => ({
     name: addOn.name,
+    active: true,
     units: addOn.units,
     driver: addOn.driver,
     prices: Object.fromEntries(

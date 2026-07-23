@@ -71,8 +71,11 @@ function sanitizePricingForClient(data) {
     ])
   );
 
-  const publicAddOns = (data?.addOns || []).map((addOn) => ({
+  const publicAddOns = (data?.addOns || [])
+    .filter((addOn) => addOn.active !== false)
+    .map((addOn) => ({
     name: addOn.name,
+    active: true,
     units: addOn.units,
     driver: addOn.driver,
     prices: Object.fromEntries(

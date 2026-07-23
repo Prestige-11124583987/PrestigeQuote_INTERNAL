@@ -50,9 +50,28 @@ Edit the selling price per square foot here:
 Each add-on has:
 
 - `name`: customer-facing name
+- `active`: `true` shows the add-on; `false` hides it from new quotes
 - `chargeBy`: `SF`, `Glass`, `Slabs`, or `Each`
 - `unitLabel`: wording shown in the pricing editor
 - `pricesByStyle`: selling price for each style
+
+Example:
+
+```json
+{
+  "name": "Impact Glass",
+  "active": false,
+  "chargeBy": "Glass",
+  "unitLabel": "/ SF of Glass",
+  "pricesByStyle": {
+    "Traditional": 40,
+    "Slim Line": 40,
+    "Interior Partitions": 0
+  }
+}
+```
+
+You can also turn add-ons on and off directly inside **Pricing & Options**. Browser changes affect only that device until the repository file is edited and redeployed.
 
 ## Installation
 
