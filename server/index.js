@@ -318,7 +318,7 @@ app.get("/api/supplements", (req, res) => {
   try {
     res.json(listSupplements());
   } catch (error) {
-    res.status(500).json({ error: error.message || "Could not list invoice supplements." });
+    res.status(500).json({ error: error.message || "Could not list quote supplements." });
   }
 });
 
@@ -347,7 +347,7 @@ app.post("/api/supplements", (req, res) => {
 
     res.status(201).json(listSupplements());
   } catch (error) {
-    res.status(400).json({ error: error.message || "Could not upload invoice supplements." });
+    res.status(400).json({ error: error.message || "Could not upload quote supplements." });
   }
 });
 
@@ -374,7 +374,15 @@ app.delete("/api/supplements/:name", (req, res) => {
 
 const clientDistPath = path.join(__dirname, "..", "dist");
 if (fs.existsSync(clientDistPath)) {
-  app.use(express.static(clientDistPath));
+  app.use(express.static(clientDistPath, {
+    setHeaders(res, filePath) {
+      if (filePath.includes(`${path.sep}branding${path.sep}`)) {
+        // Branding files keep stable filenames so non-coders can replace them.
+        // Force revalidation so a redeploy does not leave an old header cached.
+        res.setHeader("Cache-Control", "no-store");
+      }
+    }
+  }));
   app.get("*", (req, res) => {
     res.sendFile(path.join(clientDistPath, "index.html"));
   });

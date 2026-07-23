@@ -1,5 +1,7 @@
 # Release Notes — Prestige Internal Quote Tool v2.14
 
+> **Superseded by v2.15:** The two retyped supplement PDFs described below were removed because their source wording had not been approved as verbatim. Do not use the v2.14 supplement files.
+
 ## Overview
 
 v2.14 adds true company-wide quote supplements and delivers professionally reformatted Ordering Process and Limited Product Warranty documents using the same Prestige letterhead and visual system as the Quote output.

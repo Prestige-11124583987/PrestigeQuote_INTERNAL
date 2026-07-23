@@ -1,21 +1,28 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const serverSource = fs.readFileSync(new URL("../server/index.js", import.meta.url), "utf8");
-const apiSource = fs.readFileSync(new URL("../client/src/api.js", import.meta.url), "utf8");
-const appSource = fs.readFileSync(new URL("../client/src/App.jsx", import.meta.url), "utf8");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const supplementDirectory = path.join(root, "invoice-supplements");
+const serverSource = fs.readFileSync(path.join(root, "server", "index.js"), "utf8");
+const apiSource = fs.readFileSync(path.join(root, "client", "src", "api.js"), "utf8");
+const appSource = fs.readFileSync(path.join(root, "client", "src", "App.jsx"), "utf8");
 
-const sharedFiles = [
-  "01-Ordering-Process.pdf",
-  "02-Limited-Product-Warranty.pdf"
-];
+assert.equal(fs.existsSync(supplementDirectory), true, "The shared supplement folder should exist.");
+
+const sharedFiles = fs.readdirSync(supplementDirectory)
+  .filter((name) => name.toLowerCase().endsWith(".pdf"));
 
 for (const name of sharedFiles) {
-  const fileUrl = new URL(`../invoice-supplements/${name}`, import.meta.url);
-  assert.equal(fs.existsSync(fileUrl), true, `${name} should exist in the shared supplement folder.`);
-  const bytes = fs.readFileSync(fileUrl);
+  const bytes = fs.readFileSync(path.join(supplementDirectory, name));
   assert.equal(bytes.subarray(0, 4).toString(), "%PDF", `${name} should be a valid PDF.`);
 }
+
+// v2.14's retyped PDFs were not approved as verbatim source documents and
+// must not ship accidentally in the current repository.
+assert.equal(sharedFiles.includes("01-Ordering-Process.pdf"), false);
+assert.equal(sharedFiles.includes("02-Limited-Product-Warranty.pdf"), false);
 
 assert.match(serverSource, /repositorySupplementsDirectory/);
 assert.match(serverSource, /path\.join\(__dirname, "\.\.", "invoice-supplements"\)/);

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import {
   calculateQuote,
   deleteSupplement,
@@ -44,6 +45,8 @@ const WORK_SCOPE_OPTIONS = [
   "Install Prestige door(s)/window(s).",
   "Complete all associated finish work."
 ];
+
+const QUOTE_HEADER_IMAGE_URL = "/branding/quote-header.png";
 
 const QUOTE_TERMS_NOTICE = "Applicable taxes, if any, are not included. This quote is valid for thirty (30) days. Production will commence upon Prestige’s receipt of a production deposit equal to fifty percent (50%) of the discounted price of all quoted door and window units, including selected add-ons and excluding installation. The remaining product balance is due prior to shipment.";
 
@@ -1285,70 +1288,122 @@ function drawMetricCard(
   }
 }
 
-function drawInvoiceHeader(page, result, fonts, colors, pageNumber, totalPages, compact = false) {
-  const top = 752;
+function drawFallbackBrandHeader(page, fonts, colors, compact = false) {
+  const top = compact ? 748 : 750;
   page.drawText("PRESTIGE", {
     x: 38,
     y: top,
-    size: compact ? 17 : 21,
+    size: compact ? 16 : 19,
     font: fonts.bold,
     color: colors.olive
   });
   page.drawText("IRON DOORS & GLAZING", {
     x: 38,
     y: top - 14,
-    size: 7.5,
+    size: 7.2,
     font: fonts.bold,
     color: colors.ink
   });
   page.drawText("12525 Westfield Lakes Cir. | Winter Garden, FL 34787", {
     x: 38,
-    y: top - 28,
-    size: 6.8,
+    y: top - 29,
+    size: 6.5,
     font: fonts.regular,
     color: colors.muted
   });
   page.drawText("PrestigeIronDoors.com | (855) 767-2837", {
     x: 38,
-    y: top - 39,
-    size: 6.8,
+    y: top - 40,
+    size: 6.5,
     font: fonts.regular,
     color: colors.muted
   });
+}
 
-  drawRightText(page, compact ? "QUOTE - CONTINUED" : "QUOTE", 574, top - 2, {
-    size: compact ? 12 : 16,
+async function loadQuoteHeaderImage(pdfDoc) {
+  try {
+    const response = await fetch(QUOTE_HEADER_IMAGE_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Header image returned ${response.status}.`);
+    const bytes = await response.arrayBuffer();
+
+    try {
+      return await pdfDoc.embedPng(bytes);
+    } catch (pngError) {
+      return await pdfDoc.embedJpg(bytes);
+    }
+  } catch (error) {
+    console.warn("Could not load the quote header image; using the text fallback.", error);
+    return null;
+  }
+}
+
+function drawInvoiceHeader(
+  page,
+  result,
+  fonts,
+  colors,
+  pageNumber,
+  totalPages,
+  compact = false,
+  headerImage = null
+) {
+  const imageTop = 760;
+  const imageMaxWidth = compact ? 300 : 374;
+  const imageMaxHeight = compact ? 66 : 83;
+
+  if (headerImage) {
+    const scale = Math.min(
+      imageMaxWidth / headerImage.width,
+      imageMaxHeight / headerImage.height
+    );
+    const width = headerImage.width * scale;
+    const height = headerImage.height * scale;
+    page.drawImage(headerImage, {
+      x: 38,
+      y: imageTop - height,
+      width,
+      height
+    });
+  } else {
+    drawFallbackBrandHeader(page, fonts, colors, compact);
+  }
+
+  const metaTop = compact ? 748 : 750;
+  drawRightText(page, compact ? "QUOTE - CONTINUED" : "QUOTE", 574, metaTop, {
+    size: compact ? 11.5 : 15,
     font: fonts.bold,
     color: colors.ink
   });
-  drawRightText(page, `Quote ${safePdfText(result.quoteNumber || "-")}`, 574, top - 21, {
+  drawRightText(page, `Quote ${safePdfText(result.quoteNumber || "-")}`, 574, metaTop - 20, {
     size: 7.5,
     font: fonts.regular,
     color: colors.muted
   });
-  drawRightText(page, today, 574, top - 33, {
+  drawRightText(page, today, 574, metaTop - 32, {
     size: 7.5,
     font: fonts.regular,
     color: colors.muted
   });
-  drawRightText(page, `Quote page ${pageNumber} of ${totalPages}`, 574, top - 45, {
+  drawRightText(page, `Quote page ${pageNumber} of ${totalPages}`, 574, metaTop - 44, {
     size: 6.5,
     font: fonts.regular,
     color: colors.muted
   });
 
+  const dividerY = compact ? 684 : 672;
   page.drawLine({
-    start: { x: 38, y: compact ? 690 : 692 },
-    end: { x: 574, y: compact ? 690 : 692 },
+    start: { x: 38, y: dividerY },
+    end: { x: 574, y: dividerY },
     thickness: 1.2,
     color: colors.olive
   });
 }
 
 function drawCustomerBlock(page, result, fonts, colors) {
+  const blockY = 610;
   page.drawRectangle({
     x: 38,
-    y: 626,
+    y: blockY,
     width: 536,
     height: 50,
     color: colors.white,
@@ -1366,15 +1421,15 @@ function drawCustomerBlock(page, result, fonts, colors) {
   columns.forEach(([label, value], index) => {
     if (index) {
       page.drawLine({
-        start: { x, y: 626 },
-        end: { x, y: 676 },
+        start: { x, y: blockY },
+        end: { x, y: blockY + 50 },
         thickness: 0.6,
         color: colors.border
       });
     }
     page.drawText(label, {
       x: x + 10,
-      y: 657,
+      y: blockY + 31,
       size: 6.5,
       font: fonts.bold,
       color: colors.muted
@@ -1382,7 +1437,7 @@ function drawCustomerBlock(page, result, fonts, colors) {
     const lines = wrapPdfText(value, fonts.bold, 9.5, widths[index] - 20, 2);
     lines.forEach((line, lineIndex) => page.drawText(line, {
       x: x + 10,
-      y: 640 - lineIndex * 11,
+      y: blockY + 14 - lineIndex * 11,
       size: 9.5,
       font: fonts.bold,
       color: colors.ink
@@ -1754,24 +1809,7 @@ function drawWorkScope(page, result, startY, fonts, colors) {
   return top - 22 - Math.ceil(scopeItems.length / 2) * rowHeight;
 }
 
-async function ensurePdfLibrary() {
-  if (window.PDFLib) return window.PDFLib;
-
-  await new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js";
-    script.onload = resolve;
-    script.onerror = () => reject(new Error("The PDF generator could not load."));
-    document.head.appendChild(script);
-  });
-
-  if (!window.PDFLib) throw new Error("The PDF generator could not load.");
-  return window.PDFLib;
-}
-
 async function buildCombinedInvoicePdf(result, supplements) {
-  const pdfLib = await ensurePdfLibrary();
-  const { PDFDocument, StandardFonts, rgb } = pdfLib;
   const pdfDoc = await PDFDocument.create();
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -1791,9 +1829,10 @@ async function buildCombinedInvoicePdf(result, supplements) {
   const firstPageRows = invoicePages[0]?.rows || [];
   const continuationPages = invoicePages.slice(1);
   const invoicePageCount = invoicePages.length;
+  const headerImage = await loadQuoteHeaderImage(pdfDoc);
 
   const firstPage = pdfDoc.addPage([612, 792]);
-  drawInvoiceHeader(firstPage, result, fonts, colors, 1, invoicePageCount);
+  drawInvoiceHeader(firstPage, result, fonts, colors, 1, invoicePageCount, false, headerImage);
   drawCustomerBlock(firstPage, result, fonts, colors);
 
   const metrics = [
@@ -1809,7 +1848,7 @@ async function buildCombinedInvoicePdf(result, supplements) {
       metric[0],
       metric[1],
       38 + index * 135.3,
-      552,
+      543,
       metricWidth,
       fonts,
       colors,
@@ -1822,7 +1861,7 @@ async function buildCombinedInvoicePdf(result, supplements) {
 
   const noticeFontSize = 8;
   const noticeLineHeight = 9.5;
-  const noticeTopY = 540;
+  const noticeTopY = 531;
   const noticeLines = wrapPdfText(QUOTE_TERMS_NOTICE, regular, noticeFontSize, 536, 6);
   noticeLines.forEach((line, index) => {
     firstPage.drawText(line, {
@@ -1853,7 +1892,7 @@ async function buildCombinedInvoicePdf(result, supplements) {
 
   continuationPages.forEach((invoicePage, index) => {
     const page = pdfDoc.addPage([612, 792]);
-    drawInvoiceHeader(page, result, fonts, colors, index + 2, invoicePageCount, true);
+    drawInvoiceHeader(page, result, fonts, colors, index + 2, invoicePageCount, true, headerImage);
     page.drawText(`Additional doors for ${safePdfText(result.preparedFor?.company || "customer")}`, {
       x: 38,
       y: 670,
@@ -1992,16 +2031,35 @@ function SupplementManager({ supplements, setSupplements, setStatus }) {
   );
 }
 
+function QuoteBrandHeaderImage() {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div className="invoice-branding-fallback" aria-label="Prestige Iron Doors and Glazing">
+        <strong>PRESTIGE</strong>
+        <span>IRON DOORS &amp; GLAZING</span>
+        <small>12525 Westfield Lakes Cir. · Winter Garden, FL 34787 · (855) 767-2837</small>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      className="invoice-branding-image"
+      src={QUOTE_HEADER_IMAGE_URL}
+      alt="Prestige Iron Doors, LLC letterhead"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex = 0, firstPage = false }) {
   return (
     <div className="invoice-preview-page">
       <div className="invoice-preview-header">
-        <div>
-          <strong>PRESTIGE</strong>
-          <span>IRON DOORS & GLAZING</span>
-          <small>12525 Westfield Lakes Cir. · Winter Garden, FL 34787 · (855) 767-2837</small>
-        </div>
-        <div>
+        <QuoteBrandHeaderImage />
+        <div className="invoice-preview-meta">
           <b>{firstPage ? "QUOTE" : "QUOTE — CONTINUED"}</b>
           <span>Quote {result.quoteNumber || "—"}</span>
           <span>{today}</span>

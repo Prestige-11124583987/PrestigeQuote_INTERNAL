@@ -1,35 +1,33 @@
 # Company-Wide Quote Supplement Guide
 
-The `invoice-supplements/` folder controls the PDFs that every salesperson receives behind each generated Quote.
+The `invoice-supplements/` folder controls approved PDFs that every salesperson receives behind each generated Quote.
+
+## Approval Rule
+
+Only upload final approved documents. Do not retype, rewrite, summarize, or otherwise alter legal or warranty language unless the revised language has been explicitly approved.
+
+No default supplements ship in v2.15 because the prior retyped v2.14 documents were removed.
 
 ## Add a Shared PDF
 
 1. Open the GitHub repository.
 2. Open `invoice-supplements`.
-3. Choose **Add file → Upload files**.
-4. Upload the PDF.
-5. Use a numbered filename such as `03-Care-and-Maintenance.pdf`.
+3. Choose **Add file -> Upload files**.
+4. Upload the approved PDF.
+5. Use a numbered filename such as `01-Ordering-Process.pdf`.
 6. Commit the change.
-7. Allow Render to redeploy, or choose **Manual Deploy → Deploy latest commit**.
+7. Allow Render to redeploy, or choose **Manual Deploy -> Deploy latest commit**.
 
-After deployment, the PDF appears in the app as **Company-wide** and **Included** and automatically appends behind every Quote.
+After deployment, the PDF appears as **Company-wide** and **Included** and appends behind every Quote.
 
-## Replace a Shared PDF
+## Replace or Remove
 
-Upload the revised PDF using the exact same filename and commit the replacement. After Render redeploys, everyone receives the new version.
+Replace a PDF with the exact same filename, or delete it from the folder, commit, and redeploy.
 
-## Remove a Shared PDF
+## Order
 
-Delete the PDF from `invoice-supplements/`, commit the deletion, and redeploy.
-
-## Change the Order
-
-Files append alphabetically and numerically by filename. Rename the prefixes to control the sequence:
-
-- `01-Ordering-Process.pdf`
-- `02-Limited-Product-Warranty.pdf`
-- `03-Care-and-Maintenance.pdf`
+Files append alphabetically and numerically by filename. Use prefixes such as `01`, `02`, and `03`.
 
 ## Browser-Only PDFs
 
-PDFs uploaded through the app are stored only in that browser. Use browser uploads for optional or quote-specific documents. Use the GitHub folder for anything that must appear for everyone.
+PDFs uploaded through the app are stored only in that browser. Use browser uploads for optional or quote-specific documents.

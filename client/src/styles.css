@@ -384,16 +384,6 @@ button:disabled {
   border-radius: 0.9rem;
 }
 
-.cost-price-cell {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.cost-price-cell strong {
-  color: #5D5F13;
-  font-size: 0.88rem;
-}
-
 .pricing-guide {
   border-color: #A5A71B;
 }
@@ -1357,42 +1347,60 @@ button:disabled {
 }
 
 .invoice-preview-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 2.8fr) minmax(140px, 1fr);
+  align-items: start;
+  gap: 20px;
   padding-bottom: 13px;
   border-bottom: 3px solid #5d5f13;
 }
 
-.invoice-preview-header > div {
+.invoice-branding-image {
+  display: block;
+  width: 100%;
+  max-width: 506px;
+  height: auto;
+  object-fit: contain;
+  object-position: left top;
+}
+
+.invoice-branding-fallback,
+.invoice-preview-meta {
   display: grid;
   gap: 3px;
 }
 
-.invoice-preview-header > div:last-child {
-  text-align: right;
-}
-
-.invoice-preview-header strong {
+.invoice-branding-fallback strong {
   color: #5d5f13;
   font-size: 1.55rem;
   line-height: 1;
   letter-spacing: 0.08em;
 }
 
-.invoice-preview-header b {
-  font-size: 1.15rem;
-  letter-spacing: 0.08em;
-}
-
-.invoice-preview-header span {
+.invoice-branding-fallback span {
   font-size: 0.72rem;
   font-weight: 700;
 }
 
-.invoice-preview-header small {
+.invoice-branding-fallback small,
+.invoice-preview-meta small {
   color: #71746c;
   font-size: 0.65rem;
+}
+
+.invoice-preview-meta {
+  justify-items: end;
+  text-align: right;
+}
+
+.invoice-preview-meta b {
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+}
+
+.invoice-preview-meta span {
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 .invoice-customer-strip {
@@ -1580,6 +1588,15 @@ button:disabled {
 }
 
 @media (max-width: 760px) {
+  .invoice-preview-header {
+    grid-template-columns: 1fr;
+  }
+
+  .invoice-preview-meta {
+    justify-items: start;
+    text-align: left;
+  }
+
   .supplement-row {
     grid-template-columns: 34px minmax(0, 1fr);
   }

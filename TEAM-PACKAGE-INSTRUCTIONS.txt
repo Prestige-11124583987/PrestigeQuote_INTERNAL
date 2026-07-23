@@ -1,5 +1,9 @@
-PRESTIGE INTERNAL QUOTE TOOL v2.14
-PACKAGE VERSION 2.14.0
+PRESTIGE INTERNAL QUOTE TOOL v2.15
+PACKAGE VERSION 2.15.0
+
+QUOTE HEADER
+The Quote preview and generated PDF use public/branding/quote-header.png.
+To change it for everyone, replace that file in GitHub, keep the exact filename, commit, and redeploy Render. No code changes are required.
 
 PRICING EDITOR
 Open Pricing & Options inside the app. It is collapsed by default.
@@ -13,27 +17,20 @@ Team members can change:
 - Dropdown lists
 
 Click "Save Changes on This Browser" to keep changes on that browser only.
-Click "Discard Browser Edits & Use Repository Defaults" to remove that browser's saved pricing and immediately reload the repository defaults. Clearing browser cache is not required.
-
-Cost, markup, and margin information has been removed.
+Click "Discard Browser Edits & Use Repository Defaults" to remove that browser's saved pricing and reload repository defaults. Clearing browser cache is not required.
 
 DEFAULT REPOSITORY PRICING
-Edit EDIT-PRICING-HERE.json in GitHub to change the default pricing used by all new browser sessions after deployment. See EDIT-PRICING-GUIDE.md for instructions.
+Edit EDIT-PRICING-HERE.json in GitHub to change defaults used after deployment. See EDIT-PRICING-GUIDE.md.
 
 COMPANY-WIDE QUOTE SUPPLEMENTS
-PDFs in the invoice-supplements folder are included for every salesperson after the repository deploys. They append behind every generated Quote in filename order.
-
-Current shared documents:
-1. 01-Ordering-Process.pdf
-2. 02-Limited-Product-Warranty.pdf
-
-To add, replace, remove, or reorder a shared PDF, follow SUPPLEMENT-GUIDE.md.
+Only final approved PDFs belong in invoice-supplements. They append behind every generated Quote in filename order after deployment.
+No default supplement PDFs ship in v2.15 because the prior retyped documents were not approved as verbatim.
 
 BROWSER-ONLY SUPPLEMENTS
-The Quote Supplements card can also upload optional PDFs for the current browser. These are appended after the shared repository documents but are not shared with other devices.
+The Quote Supplements card can upload optional PDFs for the current browser. These are not shared with other devices.
 
 FREE RENDER INSTANCE
-Repository supplements are packaged with the deployed code and work on the free Render instance. Pricing edits and optional browser uploads remain browser-local.
+Repository branding and approved repository supplements work on the free Render instance. Pricing edits and optional browser uploads remain browser-local.
 
 QUOTE CALCULATION
 The door-unit retail price includes the base door price plus all selected add-ons. The door discount applies to that entire amount. Installation is shown separately. The production deposit is 50% of the discounted door/window units and excludes installation.

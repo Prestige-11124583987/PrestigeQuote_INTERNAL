@@ -1,5 +1,18 @@
 # Prestige Internal Quote Tool — Change Log
 
+## v2.15 - Replaceable Quote Letterhead and Release Audit
+
+- Added `public/branding/quote-header.png` as the single replaceable Quote letterhead image.
+- Added the header image to the browser Quote preview and every generated Quote page, including continuation pages.
+- Preserved the image aspect ratio and prevented cropping.
+- Added a text fallback if the branding image is missing or unreadable.
+- Added no-store cache handling for branding assets so GitHub replacements appear after redeployment.
+- Bundled `pdf-lib` in the application and removed the external CDN dependency.
+- Adjusted PDF header spacing without changing the quote calculations or indivisible-row rules.
+- Removed the unapproved retyped v2.14 supplement PDFs while preserving the company-wide supplement folder and loading workflow.
+- Added automated branding and supplement-safety tests.
+- Updated all active repository version references to **v2.15 / 2.15.0**.
+
 ## v2.14 — Company-Wide Quote Supplements
 
 - Added two professionally reformatted, company-branded quote supplements:

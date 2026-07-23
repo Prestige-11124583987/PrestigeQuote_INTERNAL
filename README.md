@@ -1,13 +1,13 @@
-# Prestige Internal Quote Tool v2.14
+# Prestige Internal Quote Tool v2.15
 
 Internal quote builder for Prestige Iron Doors & Glazing.
 
 ## Release Status
 
-- Repository release: **v2.14**
-- Application package version: **2.14.0**
+- Repository release: **v2.15**
+- Application package version: **2.15.0**
 - Release history: see `CHANGES.md`
-- Current release notes: see `RELEASE-NOTES-v2.14.md`
+- Current release notes: see `RELEASE-NOTES-v2.15.md`
 
 ## Current Quote Builder
 
@@ -22,18 +22,23 @@ Internal quote builder for Prestige Iron Doors & Glazing.
 - The quote terms notice appears directly below the summary cards and immediately above the itemized specifications table.
 - Total Package Price is highlighted in Prestige green, and the Production Deposit heading is dark red.
 
+## Replaceable Quote Header
+
+The on-screen Quote preview and every generated Quote page use:
+
+`public/branding/quote-header.png`
+
+Replace that file in GitHub while keeping the exact filename, commit the change, and let Render redeploy. The app preserves the image proportions, does not crop it, prevents stale branding cache, and falls back to a text header if the file is missing.
+
+See `public/branding/README.md` for the image recommendations.
+
 ## Company-Wide Quote Supplements
 
-PDFs committed to the root-level `invoice-supplements/` folder are automatically loaded for every salesperson and appended behind each generated Quote in filename order.
+Approved PDFs committed to the root-level `invoice-supplements/` folder are automatically loaded for every salesperson and appended behind each generated Quote in filename order.
 
-The current company-wide package includes:
+No default supplement PDFs ship in v2.15. The unapproved retyped v2.14 documents were removed so altered source language cannot be distributed accidentally. Add only final approved PDFs. See `SUPPLEMENT-GUIDE.md`.
 
-1. `01-Ordering-Process.pdf`
-2. `02-Limited-Product-Warranty.pdf`
-
-These files use the same Prestige letterhead and visual system as the Quote output. See `SUPPLEMENT-GUIDE.md` for simple GitHub instructions.
-
-Salespeople may also upload optional PDFs in the app. Those uploads remain browser-specific and are appended in addition to the company-wide documents.
+Salespeople may also upload optional PDFs in the app. Those uploads remain browser-specific and are appended in addition to any company-wide documents.
 
 ## Current Behavior
 

@@ -1,4 +1,4 @@
-# Free Render Deployment
+# Free Render Deployment - v2.15
 
 1. Upload all project files to the top level of the GitHub repository.
 2. Connect the repository to a Render Web Service.
@@ -9,25 +9,28 @@
 7. Do not add a persistent disk.
 8. Deploy the latest commit.
 
-Pricing and Quote Supplement PDFs are stored in each user's browser.
+Browser pricing edits and optional browser-uploaded PDFs remain device-specific. Approved PDFs committed to `invoice-supplements/` are company-wide.
 
-## Updating Default Pricing After Deployment
+## Replace the Quote Header
 
-Edit `EDIT-PRICING-HERE.json` in GitHub and commit the change. Render will redeploy the defaults. Discounts are entered as whole percentages, such as `18` for 18%.
+Replace `public/branding/quote-header.png` in GitHub, keep the filename unchanged, commit, and redeploy. No code changes are required. The production server disables caching for branding assets so the replacement appears after deployment.
 
-If a browser has temporary local pricing saved, open **Pricing & Options** and click **Discard Browser Edits & Use Repository Defaults**. Clearing browser cache is not required.
+## Updating Default Pricing
+
+Edit `EDIT-PRICING-HERE.json` in GitHub and commit the change. Discounts are entered as whole percentages, such as `18` for 18%.
+
+If a browser has local pricing saved, open **Pricing & Options** and click **Discard Browser Edits & Use Repository Defaults**. Clearing browser cache is not required.
 
 ## Verify the Deployed Release
 
-After deployment, confirm the repository contains `VERSION` with `2.14.0` and that `package.json` also shows version `2.14.0`.
+Confirm:
+
+- `VERSION` contains `2.15.0`.
+- `package.json` contains version `2.15.0`.
+- The Quote preview shows the image from `public/branding/quote-header.png`.
+- A generated PDF shows the same image on page 1 and continuation pages.
+- The Quote still generates with a text header if the image is temporarily renamed or removed.
 
 ## Verify Company-Wide Supplements
 
-After deployment:
-
-1. Open the Quote Supplements section.
-2. Confirm `01-Ordering-Process.pdf` and `02-Limited-Product-Warranty.pdf` are labeled **Company-wide** and **Included**.
-3. Generate a test Quote.
-4. Confirm the Ordering Process and Limited Product Warranty append after the Quote pages.
-
-No Render disk is required because these PDFs are committed with the repository.
+Only final approved PDFs should be placed in `invoice-supplements/`. After deployment, each approved file should appear as **Company-wide** and **Included** and append behind the Quote in filename order.

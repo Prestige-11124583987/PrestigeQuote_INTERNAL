@@ -1,14 +1,10 @@
 # Company-Wide Quote Supplements
 
-Every PDF in this folder is packaged with the deployed application and automatically appended behind every generated Quote.
+Place approved PDF supplements in this folder and commit them to GitHub. They will be appended to every generated quote for every salesperson after Render redeploys.
 
-Files print in filename order. Use numeric prefixes such as `01`, `02`, and `03` to control sequence.
+Use numbered filenames to control order, for example:
 
-Current files:
+- `01-Ordering-Process.pdf`
+- `02-Limited-Product-Warranty.pdf`
 
-1. `01-Ordering-Process.pdf`
-2. `02-Limited-Product-Warranty.pdf`
-
-See the root-level `SUPPLEMENT-GUIDE.md` for non-coder GitHub instructions.
-
-Do not place private, customer-specific, or temporary documents in this folder because every salesperson and every generated Quote will receive them after deployment.
+Important: only place final, approved PDFs here. The prior retyped v2.14 supplements were removed because their source wording had not been approved as verbatim.
