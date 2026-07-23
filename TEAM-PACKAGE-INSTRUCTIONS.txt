@@ -1,0 +1,39 @@
+PRESTIGE INTERNAL QUOTE TOOL v2.14
+PACKAGE VERSION 2.14.0
+
+PRICING EDITOR
+Open Pricing & Options inside the app. It is collapsed by default.
+
+Team members can change:
+- Base selling prices
+- Add-on names
+- Add-on selling prices
+- Installation prices
+- Retail, builder, and distributor discounts
+- Dropdown lists
+
+Click "Save Changes on This Browser" to keep changes on that browser only.
+Click "Discard Browser Edits & Use Repository Defaults" to remove that browser's saved pricing and immediately reload the repository defaults. Clearing browser cache is not required.
+
+Cost, markup, and margin information has been removed.
+
+DEFAULT REPOSITORY PRICING
+Edit EDIT-PRICING-HERE.json in GitHub to change the default pricing used by all new browser sessions after deployment. See EDIT-PRICING-GUIDE.md for instructions.
+
+COMPANY-WIDE QUOTE SUPPLEMENTS
+PDFs in the invoice-supplements folder are included for every salesperson after the repository deploys. They append behind every generated Quote in filename order.
+
+Current shared documents:
+1. 01-Ordering-Process.pdf
+2. 02-Limited-Product-Warranty.pdf
+
+To add, replace, remove, or reorder a shared PDF, follow SUPPLEMENT-GUIDE.md.
+
+BROWSER-ONLY SUPPLEMENTS
+The Quote Supplements card can also upload optional PDFs for the current browser. These are appended after the shared repository documents but are not shared with other devices.
+
+FREE RENDER INSTANCE
+Repository supplements are packaged with the deployed code and work on the free Render instance. Pricing edits and optional browser uploads remain browser-local.
+
+QUOTE CALCULATION
+The door-unit retail price includes the base door price plus all selected add-ons. The door discount applies to that entire amount. Installation is shown separately. The production deposit is 50% of the discounted door/window units and excludes installation.
