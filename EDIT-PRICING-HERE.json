@@ -26,8 +26,8 @@
       "chargeBy": "SF",
       "unitLabel": "/ SF",
       "pricesByStyle": {
-        "Traditional": 86.84,
-        "Slim Line": 86.84,
+        "Traditional": 53.30,
+        "Slim Line": 53.3,
         "Interior Partitions": 0
       }
     },
@@ -36,8 +36,8 @@
       "chargeBy": "SF",
       "unitLabel": "/ SF",
       "pricesByStyle": {
-        "Traditional": 0,
-        "Slim Line": 0,
+        "Traditional": 84.3,
+        "Slim Line": 84.3,
         "Interior Partitions": 0
       }
     },
@@ -57,7 +57,7 @@
       "unitLabel": "/ SF",
       "pricesByStyle": {
         "Traditional": 0,
-        "Slim Line": 5.56,
+        "Slim Line": 0,
         "Interior Partitions": 5.56
       }
     },
@@ -202,8 +202,8 @@
   ],
   "discountPercentages": {
     "Retail": {
-      "Low": 18,
-      "High": 22
+      "Low": 15,
+      "High": 20
     },
     "Builder": {
       "Low": 30,
