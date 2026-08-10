@@ -1962,3 +1962,120 @@ button:disabled {
 .inactive-addon-row select {
   background: #f7f7f5;
 }
+
+/* v2.17 additional quote items */
+.additional-items-card {
+  border-color: #A5A71B;
+}
+
+.additional-items-table-wrap {
+  margin-top: 0.85rem;
+}
+
+.additional-items-table th:nth-child(1),
+.additional-items-table td:nth-child(1) { min-width: 260px; }
+.additional-items-table th:nth-child(2),
+.additional-items-table td:nth-child(2),
+.additional-items-table th:nth-child(3),
+.additional-items-table td:nth-child(3),
+.additional-items-table th:nth-child(4),
+.additional-items-table td:nth-child(4) { min-width: 120px; }
+.additional-items-table th:nth-child(5),
+.additional-items-table td:nth-child(5) { min-width: 140px; }
+
+.additional-item-total-cell {
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.additional-items-total-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.85rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #B4B4B4;
+  border-radius: 0.85rem;
+  background: #E3E3E3;
+}
+
+.additional-items-total-row span {
+  color: #6A6A6A;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.additional-items-total-row strong {
+  color: #404040;
+  font-size: 1.2rem;
+}
+
+.invoice-additional-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 14px;
+  padding: 11px 13px;
+  border: 1px solid #d5d6ca;
+  background: #fff;
+}
+
+.invoice-additional-strip > div {
+  display: grid;
+  gap: 4px;
+}
+
+.invoice-additional-strip span {
+  color: #686b63;
+  font-size: 0.61rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.invoice-additional-strip small {
+  color: #676a62;
+  font-size: 0.66rem;
+  max-width: 300px;
+}
+
+.additional-values {
+  display: grid !important;
+  grid-template-columns: repeat(3, auto);
+  gap: 1rem !important;
+  align-items: center;
+  text-align: right;
+}
+
+.additional-values span {
+  display: grid;
+  gap: 2px;
+}
+
+.additional-values strong {
+  color: #20231f;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 850px) {
+  .invoice-additional-strip,
+  .additional-items-total-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .additional-values {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+}
+
+@media print {
+  .additional-items-card {
+    display: none !important;
+  }
+}

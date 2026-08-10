@@ -136,4 +136,44 @@ assert.equal(fullDoorUnitDiscountResult.units[0].unitPrice, 120);
 assert.equal(fullDoorUnitDiscountResult.totals.productionDepositBasis, 120);
 assert.equal(fullDoorUnitDiscountResult.totals.productionDepositDue, 60);
 
+
+const additionalItemsQuote = {
+  customerType: "Retail",
+  discountTier: "Low",
+  installationDiscountRate: 0,
+  productionDepositRate: 0.5,
+  workScope: [],
+  units: [],
+  additionalItems: [
+    {
+      id: 1,
+      itemName: "Accessory Kit",
+      priceEa: 100,
+      quantity: 2,
+      discountRate: 0.1
+    },
+    {
+      id: 2,
+      itemName: "Threshold",
+      priceEa: 50,
+      quantity: 1,
+      discount: 20
+    }
+  ]
+};
+
+const additionalItemsResult = calculateQuote(additionalItemsQuote, pricingData);
+assert.equal(additionalItemsResult.units.length, 0);
+assert.equal(additionalItemsResult.additionalItems.length, 2);
+assert.equal(additionalItemsResult.additionalItems[0].retailAmount, 200);
+assert.equal(additionalItemsResult.additionalItems[0].discountAmount, 20);
+assert.equal(additionalItemsResult.additionalItems[0].lineTotal, 180);
+assert.equal(additionalItemsResult.additionalItems[1].discountRate, 0.2);
+assert.equal(additionalItemsResult.totals.additionalItemsRetail, 250);
+assert.equal(additionalItemsResult.totals.additionalItemsDiscountAmount, 30);
+assert.equal(additionalItemsResult.totals.additionalItemsSubtotal, 220);
+assert.equal(additionalItemsResult.totals.quoteTotal, 220);
+assert.equal(additionalItemsResult.totals.productionDepositBasis, 220);
+assert.equal(additionalItemsResult.totals.productionDepositDue, 110);
+
 console.log("Pricing engine test passed.");

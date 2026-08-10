@@ -114,6 +114,16 @@ function blankUnit(id) {
   };
 }
 
+function blankAdditionalItem(id) {
+  return {
+    id,
+    itemName: "",
+    priceEa: "",
+    quantity: "",
+    discountRate: ""
+  };
+}
+
 function updateUnit(quote, unitId, patch) {
   return {
     ...quote,
@@ -159,6 +169,39 @@ function duplicateUnit(quote, unitId, nextId) {
   const units = [...quote.units];
   units.splice(index + 1, 0, duplicate);
   return { ...quote, units };
+}
+
+function updateAdditionalItem(quote, itemId, patch) {
+  return {
+    ...quote,
+    additionalItems: (quote.additionalItems || []).map((item) =>
+      item.id === itemId ? { ...item, ...patch } : item
+    )
+  };
+}
+
+function removeAdditionalItem(quote, itemId) {
+  return {
+    ...quote,
+    additionalItems: (quote.additionalItems || []).filter((item) => item.id !== itemId)
+  };
+}
+
+function itemDiscountRateForInput(value) {
+  if (value === undefined || value === null || value === "") return "";
+  const numeric = Number(value || 0);
+  return round2(numeric > 1 ? numeric : numeric * 100);
+}
+
+function additionalItemLineTotal(item) {
+  const priceEa = Number(item.priceEa || 0);
+  const quantity = Number(item.quantity || 0);
+  const discountRate = Number(item.discountRate || 0);
+  return Math.max(priceEa * quantity * (1 - discountRate), 0);
+}
+
+function additionalItemsTotal(items) {
+  return (items || []).reduce((sum, item) => sum + additionalItemLineTotal(item), 0);
 }
 
 function Field({ label, children }) {
@@ -542,6 +585,125 @@ function UnitEditor({ unit, quote, setQuote, config, onDuplicate }) {
             <em>{addOn.driver}</em>
           </label>
         ))}
+      </div>
+    </section>
+  );
+}
+
+
+function AdditionalItemsEditor({ quote, setQuote, nextItemId }) {
+  const additionalItems = quote.additionalItems || [];
+
+  return (
+    <section className="card additional-items-card">
+      <div className="section-header">
+        <div>
+          <h2>Additional Item(s)</h2>
+          <p className="muted">Add accessories or other manually priced items. Discounts are entered per item.</p>
+        </div>
+        <button
+          type="button"
+          className="secondary"
+          onClick={() =>
+            setQuote({
+              ...quote,
+              additionalItems: [...additionalItems, blankAdditionalItem(nextItemId)]
+            })
+          }
+        >
+          + Add Item
+        </button>
+      </div>
+
+      {additionalItems.length ? (
+        <div className="table-wrap additional-items-table-wrap">
+          <table className="additional-items-table">
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>Price / Ea</th>
+                <th>Quantity</th>
+                <th>Discount</th>
+                <th>Total Cost</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {additionalItems.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    <input
+                      value={item.itemName || ""}
+                      placeholder="Accessory / item name"
+                      onChange={(event) =>
+                        setQuote(updateAdditionalItem(quote, item.id, { itemName: event.target.value }))
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={item.priceEa ?? ""}
+                      onChange={(event) =>
+                        setQuote(updateAdditionalItem(quote, item.id, {
+                          priceEa: event.target.value === "" ? "" : Number(event.target.value)
+                        }))
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={item.quantity ?? ""}
+                      onChange={(event) =>
+                        setQuote(updateAdditionalItem(quote, item.id, {
+                          quantity: event.target.value === "" ? "" : Number(event.target.value)
+                        }))
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="0%"
+                      value={itemDiscountRateForInput(item.discountRate)}
+                      onChange={(event) =>
+                        setQuote(updateAdditionalItem(quote, item.id, {
+                          discountRate: event.target.value === "" ? "" : Number(event.target.value) / 100
+                        }))
+                      }
+                    />
+                  </td>
+                  <td className="additional-item-total-cell">
+                    {preciseCurrency.format(additionalItemLineTotal(item))}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="danger secondary small-button"
+                      onClick={() => setQuote(removeAdditionalItem(quote, item.id))}
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="empty-state">No additional items added. Use this for accessories or other manually priced items.</p>
+      )}
+
+      <div className="additional-items-total-row">
+        <span>Total Cost of Additional Items</span>
+        <strong>{preciseCurrency.format(additionalItemsTotal(additionalItems))}</strong>
       </div>
     </section>
   );
@@ -1210,6 +1372,18 @@ function pdfAccountingDiscount(value) {
   return amount ? `(${pdfMoney(amount)})` : "-";
 }
 
+function formatAdditionalItemsSummary(items, maxItems = 4) {
+  const source = Array.isArray(items) ? items.filter((item) => item.itemName || item.lineTotal) : [];
+  if (!source.length) return "";
+  const visible = source.slice(0, maxItems).map((item) => {
+    const quantity = Number(item.quantity || 0);
+    const suffix = quantity ? ` x${quantity}` : "";
+    return `${item.itemName || "Additional Item"}${suffix}`;
+  });
+  const remaining = source.length - visible.length;
+  return remaining > 0 ? `${visible.join(", ")} + ${remaining} more` : visible.join(", ");
+}
+
 function safePdfText(value) {
   return String(value ?? "")
     .replace(/[•]/g, "-")
@@ -1510,7 +1684,7 @@ function paginateDoorRows(units, fonts) {
   const descriptionWidth = 205 - 14;
   const rows = (units || []).map((unit) => createDoorRowLayout(unit, fonts, descriptionWidth));
   return paginateIndivisibleRows(rows, {
-    firstPageCapacity: 360,
+    firstPageCapacity: 320,
     continuationCapacity: 556,
     maxFirstPageRows: 5
   });
@@ -1691,6 +1865,89 @@ function drawDoorTotalLine(page, result, startY, fonts, colors) {
     page.drawText(value, {
       x: valueX + (width - textWidth) / 2,
       y: bottom + 8,
+      size,
+      font,
+      color: colors.ink
+    });
+    valueX += width;
+  });
+
+  return bottom;
+}
+
+
+function drawAdditionalItemsLine(page, result, startY, fonts, colors) {
+  const x = 38;
+  const widths = [265, 80, 80, 111];
+  const top = startY - 7;
+  const height = 38;
+  const bottom = top - height;
+
+  page.drawRectangle({
+    x,
+    y: bottom,
+    width: 536,
+    height,
+    color: colors.white,
+    borderColor: colors.border,
+    borderWidth: 0.6
+  });
+
+  let cursorX = x;
+  widths.slice(0, -1).forEach((width) => {
+    cursorX += width;
+    page.drawLine({
+      start: { x: cursorX, y: bottom },
+      end: { x: cursorX, y: top },
+      thickness: 0.35,
+      color: colors.border
+    });
+  });
+
+  page.drawText("ADDITIONAL ITEM(S)", {
+    x: x + 10,
+    y: bottom + 17,
+    size: 9,
+    font: fonts.bold,
+    color: colors.ink
+  });
+
+  const summary = formatAdditionalItemsSummary(result.additionalItems || []);
+  if (summary) {
+    const lines = wrapPdfText(summary, fonts.regular, 5.7, widths[0] - 20, 1);
+    lines.forEach((line, index) => page.drawText(line, {
+      x: x + 10,
+      y: bottom + 7 - index * 6.2,
+      size: 5.7,
+      font: fonts.regular,
+      color: colors.muted
+    }));
+  }
+
+  const labels = ["RETAIL", "DISCOUNT", "TOTAL"];
+  const values = [
+    pdfMoney(result.totals.additionalItemsRetail || 0),
+    pdfAccountingDiscount(result.totals.additionalItemsDiscountAmount),
+    pdfMoney(result.totals.additionalItemsSubtotal || 0)
+  ];
+
+  let valueX = x + widths[0];
+  values.forEach((value, index) => {
+    const width = widths[index + 1];
+    const labelWidth = fonts.bold.widthOfTextAtSize(labels[index], 5.4);
+    page.drawText(labels[index], {
+      x: valueX + (width - labelWidth) / 2,
+      y: bottom + 25,
+      size: 5.4,
+      font: fonts.bold,
+      color: colors.muted
+    });
+    const font = index === 2 ? fonts.bold : fonts.regular;
+    const size = index === 2 ? 7.4 : 7;
+    const textWidth = font.widthOfTextAtSize(value, size);
+    page.drawText(value, {
+      x: valueX + (width - textWidth) / 2,
+      y: bottom + 11,
       size,
       font,
       color: colors.ink
@@ -1891,7 +2148,8 @@ async function buildCombinedInvoicePdf(result, supplements) {
 
   const tableBottom = drawLineItemsTable(firstPage, firstPageRows, tableStartY, fonts, colors, 0);
   const doorTotalBottom = drawDoorTotalLine(firstPage, result, tableBottom, fonts, colors);
-  const installationBottom = drawInstallationLine(firstPage, result, doorTotalBottom, fonts, colors);
+  const additionalItemsBottom = drawAdditionalItemsLine(firstPage, result, doorTotalBottom, fonts, colors);
+  const installationBottom = drawInstallationLine(firstPage, result, additionalItemsBottom, fonts, colors);
   drawWorkScope(firstPage, result, installationBottom, fonts, colors);
 
   const contact = [result.preparedBy?.email, result.preparedBy?.phone].filter(Boolean).join(" | ");
@@ -2089,9 +2347,9 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
             <div><span>Prepared By</span><strong>{result.preparedBy?.name || "—"}</strong></div>
           </div>
           <div className="invoice-metrics">
-            <div><span>Package Retail Price</span><strong>{currency.format(result.totals.suggestedRetail || 0)}</strong><small>Door(s) &amp; Installation</small></div>
+            <div><span>Package Retail Price</span><strong>{currency.format(result.totals.suggestedRetail || 0)}</strong><small>Product(s) &amp; Installation</small></div>
             <div><span>Total Savings</span><strong>{formatAccountingDiscount(result.totals.totalDiscountAmount)}</strong><small>Door &amp; Install Discounts</small></div>
-            <div className="total-package-metric"><span>Total Package Price</span><strong>{currency.format(result.totals.quoteTotal || 0)}</strong><small>Door(s) + Installation</small></div>
+            <div className="total-package-metric"><span>Total Package Price</span><strong>{currency.format(result.totals.quoteTotal || 0)}</strong><small>Product(s) + Installation</small></div>
             <div className="production-deposit-metric"><span>Production Deposit</span><strong>{currency.format(result.totals.productionDepositDue || 0)}</strong><small>Due Today</small></div>
           </div>
           <p className="quote-terms-notice quote-terms-notice-top">
@@ -2149,6 +2407,20 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
               <span>Retail <strong>{currency.format(result.totals.materialRetailSubtotal || 0)}</strong></span>
               <span>Discount <strong>{formatAccountingDiscount(result.totals.materialDiscountAmount)}</strong></span>
               <span>Total <strong>{currency.format(result.totals.materialSubtotal || 0)}</strong></span>
+            </div>
+          </div>
+
+          <div className="invoice-additional-strip">
+            <div>
+              <span>Additional Item(s)</span>
+              {formatAdditionalItemsSummary(result.additionalItems || []) ? (
+                <small>{formatAdditionalItemsSummary(result.additionalItems || [])}</small>
+              ) : null}
+            </div>
+            <div className="additional-values">
+              <span>Retail <strong>{currency.format(result.totals.additionalItemsRetail || 0)}</strong></span>
+              <span>Discount <strong>{formatAccountingDiscount(result.totals.additionalItemsDiscountAmount)}</strong></span>
+              <span>Total <strong>{currency.format(result.totals.additionalItemsSubtotal || 0)}</strong></span>
             </div>
           </div>
 
@@ -2298,6 +2570,11 @@ export default function App() {
     return Math.max(...quote.units.map((unit) => Number(unit.id) || 0)) + 1;
   }, [quote]);
 
+  const nextAdditionalItemId = useMemo(() => {
+    if (!quote?.additionalItems?.length) return 1;
+    return Math.max(...quote.additionalItems.map((item) => Number(item.id) || 0)) + 1;
+  }, [quote]);
+
   if (!config || !quote) {
     return <main className="app-shell">Loading estimator…</main>;
   }
@@ -2365,6 +2642,12 @@ export default function App() {
           onDuplicate={(unitId) => setQuote(duplicateUnit(quote, unitId, nextUnitId))}
         />
       ))}
+
+      <AdditionalItemsEditor
+        quote={quote}
+        setQuote={setQuote}
+        nextItemId={nextAdditionalItemId}
+      />
 
       <SupplementManager supplements={supplements} setSupplements={setSupplements} setStatus={setStatus} />
       <QuoteOutput result={result} supplements={supplements} setStatus={setStatus} />

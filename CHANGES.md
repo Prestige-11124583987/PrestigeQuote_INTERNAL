@@ -1,3 +1,12 @@
+
+## v2.17.0 - Additional Item(s)
+
+- Added an Additional Item(s) editor for accessories and manually priced items.
+- Added item fields for Item Name, Price / Ea, Quantity, and manual Discount.
+- Added a calculated Total Cost for each additional item and a total for all additional items.
+- Added an Additional Item(s) total line on quote page 1 between Doors / Windows and Installation.
+- Included additional items in package retail, total savings, quote total, and production deposit basis.
+
 # Prestige Internal Quote Tool — Change Log
 
 ## v2.16 — Add-On Visibility and Revised Pricing Defaults

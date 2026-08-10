@@ -52,6 +52,40 @@ function selectedAddOnNames(unit) {
     .map(([name]) => name);
 }
 
+function additionalItemDiscountRate(item) {
+  const raw = item.discountRate ?? item.discount ?? 0;
+  const value = number(raw, 0);
+  if (!value) return 0;
+  return value > 1 ? value / 100 : value;
+}
+
+function calculateAdditionalItems(items) {
+  return (Array.isArray(items) ? items : [])
+    .map((item, index) => {
+      const itemName = String(item.itemName ?? item.name ?? "").trim();
+      const priceEa = Math.max(number(item.priceEa ?? item.priceEach ?? item.price, 0), 0);
+      const quantity = Math.max(number(item.quantity, 0), 0);
+      const discountRate = Math.max(additionalItemDiscountRate(item), 0);
+      const retailAmount = priceEa * quantity;
+      const discountAmount = retailAmount * discountRate;
+      const lineTotal = retailAmount - discountAmount;
+
+      return {
+        id: item.id ?? index + 1,
+        itemName: itemName || (retailAmount > 0 ? `Additional Item ${index + 1}` : ""),
+        priceEa: money(priceEa),
+        quantity: money(quantity),
+        discountRate: pct(discountRate),
+        retailAmount: money(retailAmount),
+        discountAmount: money(discountAmount),
+        lineTotal: money(lineTotal)
+      };
+    })
+    .filter((item) =>
+      item.itemName || item.priceEa > 0 || item.quantity > 0 || item.discountRate > 0
+    );
+}
+
 function driverBasis(driver, unit) {
   switch (driver) {
     case "Glass":
@@ -207,15 +241,29 @@ export function calculateQuote(quote, data) {
   const installationDiscountAmount = installationGross * installationDiscountRate;
   const installationNet = installationGross - installationDiscountAmount;
 
+  const additionalItems = calculateAdditionalItems(quote.additionalItems);
+  const additionalItemsRetail = additionalItems.reduce(
+    (sum, item) => sum + item.retailAmount,
+    0
+  );
+  const additionalItemsDiscountAmount = additionalItems.reduce(
+    (sum, item) => sum + item.discountAmount,
+    0
+  );
+  const additionalItemsSubtotal = additionalItems.reduce(
+    (sum, item) => sum + item.lineTotal,
+    0
+  );
+
   // Installation is calculated at the quote level and presented as its own
   // separate line. It is intentionally not allocated into individual door rows.
-  const suggestedRetail = materialRetailSubtotal + installationGross;
-  const totalDiscountAmount = materialDiscountAmount + installationDiscountAmount;
-  const quoteTotal = materialSubtotal + installationNet;
+  const suggestedRetail = materialRetailSubtotal + additionalItemsRetail + installationGross;
+  const totalDiscountAmount = materialDiscountAmount + additionalItemsDiscountAmount + installationDiscountAmount;
+  const quoteTotal = materialSubtotal + additionalItemsSubtotal + installationNet;
   const productionDepositRate = number(quote.productionDepositRate, 0.5);
-  // Production deposit is based only on the discounted door/material price.
-  // Installation and other service charges are excluded from the deposit basis.
-  const productionDepositBasis = materialSubtotal;
+  // Production deposit is based on the discounted product price: quoted units
+  // plus additional product/accessory items, excluding installation.
+  const productionDepositBasis = materialSubtotal + additionalItemsSubtotal;
   const productionDepositDue = productionDepositBasis * productionDepositRate;
 
   const externalUnits = calculatedUnits.map((unit) => ({
@@ -253,10 +301,14 @@ export function calculateQuote(quote, data) {
     discountTier: quote.discountTier || "Low",
     workScope: Array.isArray(quote.workScope) ? quote.workScope.filter(Boolean) : [],
     units: externalUnits,
+    additionalItems,
     totals: {
       materialRetailSubtotal: money(materialRetailSubtotal),
       materialDiscountAmount: money(materialDiscountAmount),
       materialSubtotal: money(materialSubtotal),
+      additionalItemsRetail: money(additionalItemsRetail),
+      additionalItemsDiscountAmount: money(additionalItemsDiscountAmount),
+      additionalItemsSubtotal: money(additionalItemsSubtotal),
       installationGross: money(installationGross),
       installationDiscountRate: pct(installationDiscountRate),
       installationDiscountAmount: money(installationDiscountAmount),
@@ -290,7 +342,8 @@ export function makeSampleQuote() {
     installationDiscountRate: 0,
     productionDepositRate: 0.5,
     workScope: [],
-    units: []
+    units: [],
+    additionalItems: []
   };
 }
 
