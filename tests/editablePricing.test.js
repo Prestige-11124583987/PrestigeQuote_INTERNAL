@@ -32,7 +32,7 @@ const expectedAddOns = {
   "Magnetic Screen": ["Slabs", "/ Slab(s)", 160, 160, 0],
   "Simulated Divided Lites (SDL)": ["SF", "/ SF", 0, 0, 5.56],
   "True Divided Lites (TDL)": ["SF", "/ SF", 0, 6, 11.14],
-  "Impact Glass": ["Glass", "/ SF of Glass", 40, 40, 0],
+  "Impact Glass": ["SF", "/ SF", 40, 40, 0],
   "Arctic Glass Treatment": ["Glass", "/ SF of Glass", 37.8, 37.8, 0],
   "Low E (FREE)": ["Glass", "/ SF of Glass", 0, 0, 0],
   "Marine Coating": ["SF", "/ SF", 13.8, 13.8, 0],

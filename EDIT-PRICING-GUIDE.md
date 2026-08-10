@@ -61,8 +61,8 @@ Example:
 {
   "name": "Impact Glass",
   "active": false,
-  "chargeBy": "Glass",
-  "unitLabel": "/ SF of Glass",
+  "chargeBy": "SF",
+  "unitLabel": "/ SF",
   "pricesByStyle": {
     "Traditional": 40,
     "Slim Line": 40,

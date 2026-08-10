@@ -86,7 +86,18 @@ function calculateAdditionalItems(items) {
     );
 }
 
-function driverBasis(driver, unit) {
+function driverBasis(addOn, unit) {
+  const driver = typeof addOn === "string" ? addOn : addOn?.driver;
+
+  // Impact Glass is quoted against the full unit square footage by default.
+  // If Glass SF is entered on the unit, treat it as an override for that
+  // specific line item. This preserves the old glass-area workflow for unusual
+  // cases without making glass area required for standard impact pricing.
+  if (typeof addOn === "object" && addOn?.name === "Impact Glass") {
+    const glassOverrideSf = number(unit.glassSf);
+    return glassOverrideSf > 0 ? glassOverrideSf : totalSquareFeet(unit);
+  }
+
   switch (driver) {
     case "Glass":
       return number(unit.glassSf);
@@ -140,7 +151,7 @@ export function calculateUnit(unit, quote, data) {
   const addOnLines = data.addOns
     .filter((addOn) => addOn.active !== false && selected.includes(addOn.name))
     .map((addOn) => {
-      const basis = driverBasis(addOn.driver, { ...unit, totalSf, glassSf, slabs });
+      const basis = driverBasis(addOn, { ...unit, totalSf, glassSf, slabs });
       const unitPrice = number(addOn.prices?.[style]) * basis;
 
       return {

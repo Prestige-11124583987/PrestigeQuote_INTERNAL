@@ -2079,3 +2079,44 @@ button:disabled {
     display: none !important;
   }
 }
+
+.project-backup-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-color: #A5A71B;
+}
+
+.project-backup-card h2 {
+  margin-bottom: 0.3rem;
+}
+
+.project-backup-card p {
+  margin: 0;
+  max-width: 780px;
+}
+
+.project-backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  min-width: 320px;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .project-backup-card {
+    display: block;
+  }
+
+  .project-backup-actions {
+    justify-content: flex-start;
+    min-width: 0;
+    margin-top: 1rem;
+  }
+}

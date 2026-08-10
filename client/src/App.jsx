@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import {
   calculateQuote,
@@ -47,6 +47,8 @@ const WORK_SCOPE_OPTIONS = [
 ];
 
 const QUOTE_HEADER_IMAGE_URL = "/branding/quote-header.png";
+const QUOTE_BACKUP_FILE_TYPE = "prestige-quote-backup";
+const QUOTE_BACKUP_SCHEMA_VERSION = 1;
 
 const QUOTE_TERMS_NOTICE = "Applicable taxes, if any, are not included. This quote is valid for thirty (30) days. Production will commence upon Prestige’s receipt of a production deposit equal to fifty percent (50%) of the discounted price of all quoted door and window units, including selected add-ons and excluding installation. The remaining product balance is due prior to shipment.";
 
@@ -122,6 +124,83 @@ function blankAdditionalItem(id) {
     quantity: "",
     discountRate: ""
   };
+}
+
+function normalizeAddOnsForImport(addOns) {
+  if (Array.isArray(addOns)) {
+    return Object.fromEntries(addOns.filter(Boolean).map((name) => [String(name), true]));
+  }
+  if (addOns && typeof addOns === "object") return { ...addOns };
+  return {};
+}
+
+function normalizeImportedUnit(unit, index) {
+  const source = unit && typeof unit === "object" ? unit : {};
+  return {
+    ...blankUnit(index + 1),
+    ...source,
+    id: Number(source.id || index + 1) || index + 1,
+    addOns: normalizeAddOnsForImport(source.addOns || source.selectedAddOns)
+  };
+}
+
+function normalizeImportedAdditionalItem(item, index) {
+  const source = item && typeof item === "object" ? item : {};
+  return {
+    ...blankAdditionalItem(index + 1),
+    ...source,
+    id: Number(source.id || index + 1) || index + 1,
+    itemName: source.itemName ?? source.name ?? "",
+    priceEa: source.priceEa ?? source.priceEach ?? source.price ?? "",
+    quantity: source.quantity ?? "",
+    discountRate: source.discountRate ?? source.discount ?? ""
+  };
+}
+
+function normalizeImportedQuotePayload(payload) {
+  const source = payload?.quote || payload?.rawQuote || payload;
+  if (!source || typeof source !== "object") {
+    throw new Error("This is not a valid Prestige quote backup file.");
+  }
+
+  return {
+    quoteNumber: source.quoteNumber || "",
+    preparedFor: {
+      company: source.preparedFor?.company || "",
+      contact: source.preparedFor?.contact || ""
+    },
+    preparedBy: {
+      name: source.preparedBy?.name || "",
+      email: source.preparedBy?.email || "",
+      phone: source.preparedBy?.phone || ""
+    },
+    customerType: source.customerType || "",
+    discountTier: source.discountTier || "",
+    installationDiscountRate: source.installationDiscountRate ?? 0,
+    productionDepositRate: source.productionDepositRate ?? 0.5,
+    workScope: Array.isArray(source.workScope) ? source.workScope.filter(Boolean) : [],
+    units: Array.isArray(source.units) ? source.units.map(normalizeImportedUnit) : [],
+    additionalItems: Array.isArray(source.additionalItems)
+      ? source.additionalItems.map(normalizeImportedAdditionalItem)
+      : []
+  };
+}
+
+function safeBackupFilenamePart(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 70);
+}
+
+function backupFilenameForQuote(quote) {
+  const quoteNumber = safeBackupFilenamePart(quote.quoteNumber);
+  const project = safeBackupFilenamePart(quote.preparedFor?.company);
+  const date = new Date().toISOString().slice(0, 10);
+  const name = quoteNumber || project || "Prestige-Quote";
+  return `${name}-${date}.prestigequote`;
 }
 
 function updateUnit(quote, unitId, patch) {
@@ -202,6 +281,81 @@ function additionalItemLineTotal(item) {
 
 function additionalItemsTotal(items) {
   return (items || []).reduce((sum, item) => sum + additionalItemLineTotal(item), 0);
+}
+
+function ProjectBackupTools({ quote, setQuote, setStatus }) {
+  const fileInputRef = useRef(null);
+
+  function downloadBackup() {
+    try {
+      const payload = {
+        fileType: QUOTE_BACKUP_FILE_TYPE,
+        schemaVersion: QUOTE_BACKUP_SCHEMA_VERSION,
+        exportedAt: new Date().toISOString(),
+        quote
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json"
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = backupFilenameForQuote(quote);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      setStatus("Quote backup downloaded. Keep that .prestigequote file with the project folder to restore this quote later.");
+    } catch (error) {
+      setStatus(error.message || "Could not download quote backup.");
+    }
+  }
+
+  async function restoreBackup(file) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setStatus("Quote backup file is too large. Select a smaller .prestigequote or JSON file.");
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const restored = normalizeImportedQuotePayload(parsed);
+      setQuote(restored);
+      setStatus(`Restored quote backup from ${file.name}. Review totals before sending because the quote recalculates using the current pricing table.`);
+    } catch (error) {
+      setStatus(error.message || "Could not restore that quote backup file.");
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  return (
+    <section className="card project-backup-card no-print">
+      <div>
+        <h2>Project Backup</h2>
+        <p className="muted">
+          Download a quote backup file after entering a project, then upload it later to restore the quote details. The backup stores quote inputs only; pricing is recalculated from the current pricing table.
+        </p>
+      </div>
+      <div className="project-backup-actions">
+        <button type="button" className="secondary" onClick={() => fileInputRef.current?.click()}>
+          Upload / Restore Quote File
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".prestigequote,.json,application/json"
+          className="hidden-file-input"
+          onChange={(event) => restoreBackup(event.target.files?.[0])}
+        />
+        <button type="button" onClick={downloadBackup}>
+          Download Quote Backup
+        </button>
+      </div>
+    </section>
+  );
 }
 
 function Field({ label, children }) {
@@ -503,7 +657,7 @@ function UnitEditor({ unit, quote, setQuote, config, onDuplicate }) {
           }
         />
         <NumberField
-          label="Glass Area SF"
+          label="Glass SF Override"
           value={unit.glassSf}
           onChange={(glassSf) =>
             setQuote(updateUnit(quote, unit.id, { glassSf }))
@@ -2611,6 +2765,8 @@ export default function App() {
       </header>
 
       {status ? <p className="status">{status}</p> : null}
+
+      <ProjectBackupTools quote={quote} setQuote={setQuote} setStatus={setStatus} />
 
       <PricingGuide config={config} />
 

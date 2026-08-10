@@ -137,6 +137,48 @@ assert.equal(fullDoorUnitDiscountResult.totals.productionDepositBasis, 120);
 assert.equal(fullDoorUnitDiscountResult.totals.productionDepositDue, 60);
 
 
+// Regression test: Impact Glass uses total unit SF by default, but Glass SF
+// can still override the basis when explicitly entered.
+const impactGlassDefaultBasisQuote = {
+  customerType: "Retail",
+  discountTier: "Low",
+  installationDiscountRate: 0,
+  productionDepositRate: 0.5,
+  workScope: [],
+  units: [
+    {
+      id: 1,
+      name: "Impact Default Basis",
+      style: "Traditional",
+      buildType: "New Build",
+      widthIn: 48,
+      heightIn: 120,
+      quantity: 1,
+      addOns: { "Impact Glass": true }
+    },
+    {
+      id: 2,
+      name: "Impact Override Basis",
+      style: "Traditional",
+      buildType: "New Build",
+      widthIn: 48,
+      heightIn: 120,
+      glassSf: 25,
+      quantity: 1,
+      addOns: { "Impact Glass": true }
+    }
+  ]
+};
+
+const impactGlassDefaultBasisResult = calculateQuote(
+  impactGlassDefaultBasisQuote,
+  pricingData
+);
+assert.equal(impactGlassDefaultBasisResult.units[0].totalSf, 40);
+assert.equal(impactGlassDefaultBasisResult.units[0].unitRetailPrice, 10600);
+assert.equal(impactGlassDefaultBasisResult.units[1].unitRetailPrice, 10000);
+
+
 const additionalItemsQuote = {
   customerType: "Retail",
   discountTier: "Low",
