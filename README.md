@@ -1,19 +1,22 @@
-# Prestige Internal Quote Tool v2.16
+# Prestige Internal Quote Tool v2.19
 
 Internal quote builder for Prestige Iron Doors & Glazing.
 
 ## Release Status
 
-- Repository release: **v2.16**
-- Application package version: **2.16.0**
+- Repository release: **v2.19**
+- Application package version: **2.19.0**
 - Release history: see `CHANGES.md`
-- Current release notes: see `RELEASE-NOTES-v2.16.md`
+- Current release notes: see `RELEASE-NOTES-v2.19.md`
 
 ## Current Quote Builder
 
 - Customer-facing PDFs are titled **Quote**, including continuation pages.
 - Pricing & Options is collapsed by default.
-- Unit cards can be duplicated with all dimensions, specifications, add-ons, quantity, and discount settings.
+- Unit cards can be duplicated with all dimensions, specifications, add-ons, quantity, discount settings, and 120-character unit notes.
+- Each unit card shows the discounted effective product price per square foot in purple.
+- Quotes include an automatic Schedule of Values page with product and installation billing milestones.
+- Installation Deposit % is editable and defaults to 0%; it is never added to the Due Today amount.
 - Work Scope items can be selected for each quote.
 - Installation appears as one separate quote line instead of being allocated to each door.
 - Door and window rows show retail price, discount percentage, dollars saved, and discounted total.
@@ -62,7 +65,7 @@ Browser-local pricing edits and optional browser uploads are device-specific. Re
 
 ## Calculation Rule
 
-The door-unit retail price equals the base door price plus every selected add-on. The door discount applies to that entire amount. Installation is separate. The production deposit equals 50% of the discounted door-unit price and excludes installation.
+The door-unit retail price equals the base door price plus every selected add-on. The door discount applies to that entire amount. Installation is separate. The default production deposit is 50% of discounted product cost and excludes installation. Any installation deposit is a separate SOV milestone and is not included in Due Today.
 
 ## Easy Repository Pricing Updates
 

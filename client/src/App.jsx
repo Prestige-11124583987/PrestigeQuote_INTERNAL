@@ -48,9 +48,9 @@ const WORK_SCOPE_OPTIONS = [
 
 const QUOTE_HEADER_IMAGE_URL = "/branding/quote-header.png";
 const QUOTE_BACKUP_FILE_TYPE = "prestige-quote-backup";
-const QUOTE_BACKUP_SCHEMA_VERSION = 1;
+const QUOTE_BACKUP_SCHEMA_VERSION = 2;
 
-const QUOTE_TERMS_NOTICE = "Applicable taxes, if any, are not included. This quote is valid for thirty (30) days. Production will commence upon Prestige’s receipt of a production deposit equal to fifty percent (50%) of the discounted price of all quoted door and window units, including selected add-ons and excluding installation. The remaining product balance is due prior to shipment.";
+const QUOTE_TERMS_NOTICE = "Applicable taxes, if any, are not included. This quote is valid for thirty (30) days. Production does not commence until the required production deposit funds have been received and cleared by Prestige. Paper checks may delay production, so electronic payment methods are recommended to avoid project delays.";
 
 function capitalizeFirst(value) {
   const text = String(value ?? "").trim();
@@ -112,6 +112,7 @@ function blankUnit(id) {
     glassTexture: "",
     glassColor: "",
     discountOverride: "",
+    notes: "",
     addOns: {}
   };
 }
@@ -140,6 +141,7 @@ function normalizeImportedUnit(unit, index) {
     ...blankUnit(index + 1),
     ...source,
     id: Number(source.id || index + 1) || index + 1,
+    notes: String(source.notes || "").slice(0, 120),
     addOns: normalizeAddOnsForImport(source.addOns || source.selectedAddOns)
   };
 }
@@ -178,6 +180,7 @@ function normalizeImportedQuotePayload(payload) {
     discountTier: source.discountTier || "",
     installationDiscountRate: source.installationDiscountRate ?? 0,
     productionDepositRate: source.productionDepositRate ?? 0.5,
+    installationDepositRate: source.installationDepositRate ?? 0,
     workScope: Array.isArray(source.workScope) ? source.workScope.filter(Boolean) : [],
     units: Array.isArray(source.units) ? source.units.map(normalizeImportedUnit) : [],
     additionalItems: Array.isArray(source.additionalItems)
@@ -358,9 +361,9 @@ function ProjectBackupTools({ quote, setQuote, setStatus }) {
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, children, className = "" }) {
   return (
-    <label className="field">
+    <label className={`field ${className}`.trim()}>
       <span>{label}</span>
       {children}
     </label>
@@ -512,7 +515,7 @@ function QuoteHeader({ quote, setQuote, config }) {
 
       <div className="divider" />
 
-      <div className="grid four compact-grid">
+      <div className="grid five compact-grid">
         <SelectField
           label="Customer Type"
           value={quote.customerType}
@@ -547,6 +550,17 @@ function QuoteHeader({ quote, setQuote, config }) {
             })
           }
         />
+        <NumberField
+          label="Installation Deposit %"
+          value={(quote.installationDepositRate ?? 0) * 100}
+          step="1"
+          onChange={(value) =>
+            setQuote({
+              ...quote,
+              installationDepositRate: Number(value || 0) / 100
+            })
+          }
+        />
       </div>
 
       <div className="divider" />
@@ -571,14 +585,24 @@ function QuoteHeader({ quote, setQuote, config }) {
   );
 }
 
-function UnitEditor({ unit, quote, setQuote, config, onDuplicate }) {
+function UnitEditor({ unit, calculatedUnit, quote, setQuote, config, onDuplicate }) {
   const totalSf = unitTotalSf(unit);
   const availableAddOns = config?.addOns || [];
 
   return (
     <section className="card unit-card">
       <div className="unit-title">
-        <h3>{capitalizeFirst(unit.name || `Unit ${unit.id}`)}</h3>
+        <div className="unit-heading-with-price">
+          <h3>{capitalizeFirst(unit.name || `Unit ${unit.id}`)}</h3>
+          <div className="effective-price-sf">
+            <span>Effective Price / SF</span>
+            <strong>
+              {Number(calculatedUnit?.effectivePricePerSf || 0) > 0
+                ? preciseCurrency.format(calculatedUnit.effectivePricePerSf)
+                : "—"}
+            </strong>
+          </div>
+        </div>
         <div className="unit-card-actions">
           <button
             type="button"
@@ -720,6 +744,19 @@ function UnitEditor({ unit, quote, setQuote, config, onDuplicate }) {
               setQuote(updateUnit(quote, unit.id, { discountOverride: normalized }));
             }}
           />
+        </Field>
+        <Field label="Unit Notes (120 characters max)" className="unit-notes-wrapper">
+          <div className="unit-notes-field">
+            <textarea
+              maxLength={120}
+              rows={3}
+              value={unit.notes || ""}
+              onChange={(e) =>
+                setQuote(updateUnit(quote, unit.id, { notes: e.target.value.slice(0, 120) }))
+              }
+            />
+            <small>{String(unit.notes || "").length}/120</small>
+          </div>
         </Field>
       </div>
 
@@ -1687,7 +1724,8 @@ function drawInvoiceHeader(
   pageNumber,
   totalPages,
   compact = false,
-  headerImage = null
+  headerImage = null,
+  documentLabel = null
 ) {
   const imageTop = 760;
   const imageMaxWidth = compact ? 300 : 374;
@@ -1711,7 +1749,7 @@ function drawInvoiceHeader(
   }
 
   const metaTop = compact ? 748 : 750;
-  drawRightText(page, compact ? "QUOTE - CONTINUED" : "QUOTE", 574, metaTop, {
+  drawRightText(page, documentLabel || (compact ? "QUOTE - CONTINUED" : "QUOTE"), 574, metaTop, {
     size: compact ? 11.5 : 15,
     font: fonts.bold,
     color: colors.ink
@@ -1742,12 +1780,13 @@ function drawInvoiceHeader(
 }
 
 function drawCustomerBlock(page, result, fonts, colors) {
-  const blockY = 610;
+  const blockY = 600;
+  const blockHeight = 60;
   page.drawRectangle({
     x: 38,
     y: blockY,
     width: 536,
-    height: 50,
+    height: blockHeight,
     color: colors.white,
     borderColor: colors.border,
     borderWidth: 0.7
@@ -1764,26 +1803,40 @@ function drawCustomerBlock(page, result, fonts, colors) {
     if (index) {
       page.drawLine({
         start: { x, y: blockY },
-        end: { x, y: blockY + 50 },
+        end: { x, y: blockY + blockHeight },
         thickness: 0.6,
         color: colors.border
       });
     }
     page.drawText(label, {
       x: x + 10,
-      y: blockY + 31,
+      y: blockY + 41,
       size: 6.5,
       font: fonts.bold,
       color: colors.muted
     });
-    const lines = wrapPdfText(value, fonts.bold, 9.5, widths[index] - 20, 2);
+    const lines = wrapPdfText(value, fonts.bold, 9.2, widths[index] - 20, index === 2 ? 1 : 2);
     lines.forEach((line, lineIndex) => page.drawText(line, {
       x: x + 10,
-      y: blockY + 14 - lineIndex * 11,
-      size: 9.5,
+      y: blockY + 23 - lineIndex * 10.5,
+      size: 9.2,
       font: fonts.bold,
       color: colors.ink
     }));
+
+    if (index === 2) {
+      const salespersonContact = [result.preparedBy?.email, result.preparedBy?.phone]
+        .filter(Boolean)
+        .join(" | ");
+      const contactLines = wrapPdfText(salespersonContact, fonts.regular, 5.8, widths[index] - 20, 2);
+      contactLines.forEach((line, lineIndex) => page.drawText(line, {
+        x: x + 10,
+        y: blockY + 8 - lineIndex * 7,
+        size: 5.8,
+        font: fonts.regular,
+        color: colors.muted
+      }));
+    }
     x += widths[index];
   });
 }
@@ -1795,7 +1848,8 @@ function buildDoorPdfDescription(unit) {
   const addOns = unit.selectedAddOns?.length
     ? `Add-Ons: ${unit.selectedAddOns.map(capitalizeFirst).join(", ")}`
     : "";
-  return [summary, addOns].filter(Boolean).join(" | ");
+  const notes = unit.notes ? `Notes: ${String(unit.notes).slice(0, 120)}` : "";
+  return [summary, addOns, notes].filter(Boolean).join(" | ");
 }
 
 function createDoorRowLayout(unit, fonts, descriptionWidth) {
@@ -2234,6 +2288,121 @@ function drawWorkScope(page, result, startY, fonts, colors) {
   return top - 22 - Math.ceil(scopeItems.length / 2) * rowHeight;
 }
 
+
+function drawScheduleOfValuesPage(page, result, fonts, colors, pageNumber, totalPages, headerImage) {
+  drawInvoiceHeader(
+    page,
+    result,
+    fonts,
+    colors,
+    pageNumber,
+    totalPages,
+    true,
+    headerImage,
+    "QUOTE - SCHEDULE OF VALUES"
+  );
+
+  page.drawText("SCHEDULE OF VALUES", {
+    x: 38,
+    y: 650,
+    size: 16,
+    font: fonts.bold,
+    color: colors.ink
+  });
+  page.drawText("Automatic billing milestones based on the quoted product and installation values.", {
+    x: 38,
+    y: 632,
+    size: 7.2,
+    font: fonts.regular,
+    color: colors.muted
+  });
+
+  const rows = result.scheduleOfValues || [];
+  let y = 598;
+  rows.forEach((row, index) => {
+    const height = 94;
+    const bottom = y - height;
+    page.drawRectangle({
+      x: 38,
+      y: bottom,
+      width: 536,
+      height,
+      color: index % 2 ? colors.soft : colors.white,
+      borderColor: colors.border,
+      borderWidth: 0.6
+    });
+    page.drawText(`${index + 1}`, {
+      x: 50,
+      y: y - 25,
+      size: 8,
+      font: fonts.bold,
+      color: colors.olive
+    });
+    const titleLines = wrapPdfText(row.title || "", fonts.bold, 9.2, 365, 2);
+    titleLines.forEach((line, lineIndex) => page.drawText(line, {
+      x: 72,
+      y: y - 24 - lineIndex * 11,
+      size: 9.2,
+      font: fonts.bold,
+      color: colors.ink
+    }));
+    const descriptionLines = wrapPdfText(row.description || "", fonts.regular, 7, 365, 4);
+    descriptionLines.forEach((line, lineIndex) => page.drawText(line, {
+      x: 72,
+      y: y - 49 - lineIndex * 9,
+      size: 7,
+      font: fonts.regular,
+      color: colors.muted
+    }));
+    drawRightText(page, pdfMoney(row.amount || 0), 558, y - 30, {
+      size: 12,
+      font: fonts.bold,
+      color: colors.ink
+    });
+    y = bottom - 8;
+  });
+
+  const contractY = 164;
+  page.drawRectangle({
+    x: 38,
+    y: contractY,
+    width: 536,
+    height: 45,
+    color: colors.olive,
+    borderColor: colors.olive,
+    borderWidth: 0.7
+  });
+  page.drawText("TOTAL CONTRACT VALUE", {
+    x: 50,
+    y: contractY + 17,
+    size: 8,
+    font: fonts.bold,
+    color: colors.white
+  });
+  drawRightText(page, pdfMoney(result.totals.quoteTotal || 0), 558, contractY + 14, {
+    size: 14,
+    font: fonts.bold,
+    color: colors.white
+  });
+
+  const billingNote = "Due Today on Quote page 1 includes the Production Deposit only. Any Installation Deposit is billed only when applicable at its installation milestone and is not included in Due Today.";
+  wrapPdfText(billingNote, fonts.bold, 7, 536, 3).forEach((line, index) => page.drawText(line, {
+    x: 38,
+    y: 137 - index * 9,
+    size: 7,
+    font: fonts.bold,
+    color: colors.ink
+  }));
+
+  wrapPdfText(QUOTE_TERMS_NOTICE, fonts.regular, 6.6, 536, 4).forEach((line, index) => page.drawText(line, {
+    x: 38,
+    y: 98 - index * 8.2,
+    size: 6.6,
+    font: fonts.regular,
+    color: colors.muted
+  }));
+}
+
 async function buildCombinedInvoicePdf(result, supplements) {
   const pdfDoc = await PDFDocument.create();
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -2254,10 +2423,11 @@ async function buildCombinedInvoicePdf(result, supplements) {
   const firstPageRows = invoicePages[0]?.rows || [];
   const continuationPages = invoicePages.slice(1);
   const invoicePageCount = invoicePages.length;
+  const quotePageCount = invoicePageCount + 1;
   const headerImage = await loadQuoteHeaderImage(pdfDoc);
 
   const firstPage = pdfDoc.addPage([612, 792]);
-  drawInvoiceHeader(firstPage, result, fonts, colors, 1, invoicePageCount, false, headerImage);
+  drawInvoiceHeader(firstPage, result, fonts, colors, 1, quotePageCount, false, headerImage);
   drawCustomerBlock(firstPage, result, fonts, colors);
 
   const metrics = [
@@ -2318,7 +2488,7 @@ async function buildCombinedInvoicePdf(result, supplements) {
 
   continuationPages.forEach((invoicePage, index) => {
     const page = pdfDoc.addPage([612, 792]);
-    drawInvoiceHeader(page, result, fonts, colors, index + 2, invoicePageCount, true, headerImage);
+    drawInvoiceHeader(page, result, fonts, colors, index + 2, quotePageCount, true, headerImage);
     page.drawText(`Additional doors for ${safePdfText(result.preparedFor?.company || "customer")}`, {
       x: 38,
       y: 670,
@@ -2336,6 +2506,17 @@ async function buildCombinedInvoicePdf(result, supplements) {
       color: colors.muted
     });
   });
+
+  const schedulePage = pdfDoc.addPage([612, 792]);
+  drawScheduleOfValuesPage(
+    schedulePage,
+    result,
+    fonts,
+    colors,
+    quotePageCount,
+    quotePageCount,
+    headerImage
+  );
 
   const skipped = [];
   for (const supplement of supplements || []) {
@@ -2498,7 +2679,15 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
           <div className="invoice-customer-strip">
             <div><span>Customer / Project</span><strong>{result.preparedFor?.company || "—"}</strong></div>
             <div><span>Contact</span><strong>{result.preparedFor?.contact || "—"}</strong></div>
-            <div><span>Prepared By</span><strong>{result.preparedBy?.name || "—"}</strong></div>
+            <div>
+              <span>Prepared By</span>
+              <strong>{result.preparedBy?.name || "—"}</strong>
+              {[result.preparedBy?.email, result.preparedBy?.phone].filter(Boolean).length ? (
+                <small className="salesperson-contact">
+                  {[result.preparedBy?.email, result.preparedBy?.phone].filter(Boolean).join(" | ")}
+                </small>
+              ) : null}
+            </div>
           </div>
           <div className="invoice-metrics">
             <div><span>Package Retail Price</span><strong>{currency.format(result.totals.suggestedRetail || 0)}</strong><small>Product(s) &amp; Installation</small></div>
@@ -2534,6 +2723,7 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
                 <span>{formatUnitSummary(unit)}</span>
                 {formatAdditionalSpecs(unit) ? <span>{formatAdditionalSpecs(unit)}</span> : null}
                 {unit.selectedAddOns?.length ? <span>Add-Ons: {unit.selectedAddOns.map(capitalizeFirst).join(", ")}</span> : null}
+                {unit.notes ? <span className="unit-output-note">Notes: {String(unit.notes).slice(0, 120)}</span> : null}
               </td>
               <td>{unit.quantity}</td>
               <td>{currency.format(unit.lineRetailRevenue || 0)}</td>
@@ -2608,12 +2798,58 @@ function InvoicePreviewPage({ result, units, pageNumber, totalPages, startIndex 
   );
 }
 
+
+function ScheduleOfValuesPreviewPage({ result, pageNumber, totalPages }) {
+  return (
+    <div className="invoice-preview-page sov-preview-page">
+      <div className="invoice-preview-header">
+        <QuoteBrandHeaderImage />
+        <div className="invoice-preview-meta">
+          <b>QUOTE — SCHEDULE OF VALUES</b>
+          <span>Quote {result.quoteNumber || "—"}</span>
+          <span>{today}</span>
+          <small>Quote page {pageNumber} of {totalPages}</small>
+        </div>
+      </div>
+
+      <div className="sov-heading">
+        <h2>Schedule of Values</h2>
+        <p>Automatic billing milestones based on the quoted product and installation values.</p>
+      </div>
+
+      <div className="sov-grid">
+        {(result.scheduleOfValues || []).map((row, index) => (
+          <div className="sov-row" key={row.key || index}>
+            <div className="sov-sequence">{index + 1}</div>
+            <div className="sov-copy">
+              <strong>{row.title}</strong>
+              <span>{row.description}</span>
+            </div>
+            <div className="sov-amount">{currency.format(row.amount || 0)}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="sov-total-row">
+        <span>Total Contract Value</span>
+        <strong>{currency.format(result.totals.quoteTotal || 0)}</strong>
+      </div>
+
+      <p className="sov-due-today-note">
+        <strong>Due Today:</strong> The amount on Quote page 1 includes the Production Deposit only. Any Installation Deposit is billed only when applicable at its installation milestone and is not included in Due Today.
+      </p>
+      <p className="sov-payment-note">{QUOTE_TERMS_NOTICE}</p>
+    </div>
+  );
+}
+
 function QuoteOutput({ result, supplements, setStatus }) {
   const [generating, setGenerating] = useState(false);
   if (!result) return null;
 
   const units = result.units || [];
   const invoiceGroups = [units.slice(0, 5), ...chunkItems(units.slice(5), 8)];
+  const quotePageCount = invoiceGroups.length + 1;
 
   async function openCombinedPdf() {
     setGenerating(true);
@@ -2652,7 +2888,7 @@ function QuoteOutput({ result, supplements, setStatus }) {
         <div>
           <h2>Printable Quote</h2>
           <p className="muted">
-            Up to five doors fit on quote page 1. {supplements.length} uploaded supplement{supplements.length === 1 ? "" : "s"} will be appended automatically.
+            Up to five doors fit on quote page 1. An automatic Schedule of Values is included as the final quote page. {supplements.length} uploaded supplement{supplements.length === 1 ? "" : "s"} will be appended automatically.
           </p>
         </div>
         <button type="button" onClick={openCombinedPdf} disabled={generating}>
@@ -2667,11 +2903,16 @@ function QuoteOutput({ result, supplements, setStatus }) {
             result={result}
             units={group}
             pageNumber={index + 1}
-            totalPages={invoiceGroups.length}
+            totalPages={quotePageCount}
             startIndex={index === 0 ? 0 : 5 + (index - 1) * 8}
             firstPage={index === 0}
           />
         ))}
+        <ScheduleOfValuesPreviewPage
+          result={result}
+          pageNumber={quotePageCount}
+          totalPages={quotePageCount}
+        />
       </div>
     </section>
   );
@@ -2792,6 +3033,7 @@ export default function App() {
         <UnitEditor
           key={unit.id}
           unit={unit}
+          calculatedUnit={result?.units?.find((candidate) => candidate.id === unit.id)}
           quote={quote}
           setQuote={setQuote}
           config={config}

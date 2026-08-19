@@ -15,6 +15,7 @@ const quote = {
   discountTier: "Low",
   installationDiscountRate: 0.15,
   productionDepositRate: 0.5,
+  installationDepositRate: 0.5,
   workScope: [
     "Furnish new Prestige door(s)/window(s).",
     "Install Prestige door(s)/window(s)."
@@ -35,6 +36,7 @@ const quote = {
       color: "Aged Bronze Patina",
       glassTexture: "Clear",
       glassColor: "Clear ",
+      notes: "Confirm threshold detail before final production release.",
       addOns: {
         "Impact Glass": true,
         "Deadbolt (w/ Pull Handle)": true
@@ -64,6 +66,8 @@ const result = calculateQuote(quote, pricingData);
 assert.equal(result.units[0].unitRetailPrice, 10040);
 assert.equal(result.units[0].discountRate, 0.4);
 assert.equal(result.units[0].unitPrice, 6024);
+assert.equal(result.units[0].effectivePricePerSf, 150.6);
+assert.equal(result.units[0].notes, "Confirm threshold detail before final production release.");
 assert.equal(result.units[0].lineMaterialRevenue, 6024);
 
 assert.equal(result.units[1].unitRetailPrice, 6600);
@@ -76,6 +80,18 @@ assert.equal(result.totals.installationNet, 2550);
 assert.equal(result.totals.quoteTotal, 12534);
 assert.equal(result.totals.productionDepositBasis, 9984);
 assert.equal(result.totals.productionDepositDue, 4992);
+assert.equal(result.totals.productionCompletionDue, 4992);
+assert.equal(result.totals.installationDepositRate, 0.5);
+assert.equal(result.totals.installationDepositDue, 1275);
+assert.equal(result.totals.installationCompletionDue, 1275);
+assert.equal(result.totals.dueToday, 4992);
+assert.equal(result.scheduleOfValues.length, 4);
+assert.equal(result.scheduleOfValues[0].title, "Production Deposit – 50% of Product Cost");
+assert.equal(result.scheduleOfValues[0].amount, 4992);
+assert.equal(result.scheduleOfValues[1].amount, 4992);
+assert.equal(result.scheduleOfValues[2].title, "Installation Deposit – 50% of Installation Cost, if applicable");
+assert.equal(result.scheduleOfValues[2].amount, 1275);
+assert.equal(result.scheduleOfValues[3].amount, 1275);
 assert.deepEqual(result.workScope, [
   "Furnish new Prestige door(s)/window(s).",
   "Install Prestige door(s)/window(s)."
@@ -217,5 +233,28 @@ assert.equal(additionalItemsResult.totals.additionalItemsSubtotal, 220);
 assert.equal(additionalItemsResult.totals.quoteTotal, 220);
 assert.equal(additionalItemsResult.totals.productionDepositBasis, 220);
 assert.equal(additionalItemsResult.totals.productionDepositDue, 110);
+
+// Unit notes are customer-facing but must never exceed 120 characters.
+const longNotesQuote = {
+  customerType: "Retail",
+  discountTier: "Low",
+  installationDiscountRate: 0,
+  productionDepositRate: 0.5,
+  installationDepositRate: 0,
+  units: [{
+    id: 99,
+    name: "Notes Limit",
+    style: "Traditional",
+    buildType: "New Build",
+    widthIn: 12,
+    heightIn: 12,
+    quantity: 1,
+    notes: "x".repeat(140),
+    addOns: {}
+  }]
+};
+const longNotesResult = calculateQuote(longNotesQuote, pricingData);
+assert.equal(longNotesResult.units[0].notes.length, 120);
+assert.equal(longNotesResult.totals.dueToday, longNotesResult.totals.productionDepositDue);
 
 console.log("Pricing engine test passed.");

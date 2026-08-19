@@ -1,4 +1,4 @@
-# Free Render Deployment - v2.16
+# Free Render Deployment - v2.19
 
 1. Upload all project files to the top level of the GitHub repository.
 2. Connect the repository to a Render Web Service.
@@ -25,8 +25,8 @@ If a browser has local pricing saved, open **Pricing & Options** and click **Dis
 
 Confirm:
 
-- `VERSION` contains `2.16.0`.
-- `package.json` contains version `2.16.0`.
+- `VERSION` contains `2.19.0`.
+- `package.json` contains version `2.19.0`.
 - The Quote preview shows the image from `public/branding/quote-header.png`.
 - A generated PDF shows the same image on page 1 and continuation pages.
 - The Quote still generates with a text header if the image is temporarily renamed or removed.

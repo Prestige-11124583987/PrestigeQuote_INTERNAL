@@ -44,7 +44,8 @@ assert.match(appSource, /className="addon-active-toggle"/);
 assert.match(appSource, /updateAddOnField\(index, "active", e\.target\.checked\)/);
 assert.match(appSource, /EDIT-PRICING-HERE\.json/);
 assert.match(appSource, /Applicable taxes, if any, are not included\. This quote is valid for thirty \(30\) days\./);
-assert.match(appSource, /The remaining product balance is due prior to shipment\./);
+assert.match(appSource, /Paper checks may delay production/);
+assert.match(appSource, /electronic payment methods are recommended to avoid project delays/);
 
 assert.match(appSource, /Door\(s\) & Installation/);
 assert.match(appSource, /Total Savings/);
@@ -56,6 +57,14 @@ assert.match(appSource, /page\.drawText\("DOORS \/ WINDOWS"/);
 assert.match(appSource, /const labels = \["RETAIL", "DISCOUNT", "TOTAL"\]/);
 assert.match(appSource, /const noticeFontSize = 8/);
 assert.match(appSource, /quote-terms-notice-top/);
+assert.match(appSource, /Installation Deposit %/);
+assert.match(appSource, /Effective Price \/ SF/);
+assert.match(appSource, /Unit Notes \(120 characters max\)/);
+assert.match(appSource, /maxLength=\{120\}/);
+assert.match(appSource, /Schedule of Values/);
+assert.match(appSource, /drawScheduleOfValuesPage/);
+assert.match(appSource, /is not included in Due Today/);
+assert.match(appSource, /salesperson-contact/);
 
 const previewNoticeIndex = appSource.indexOf('className="quote-terms-notice quote-terms-notice-top"');
 const previewTableIndex = appSource.indexOf('className="compact-invoice-table"');

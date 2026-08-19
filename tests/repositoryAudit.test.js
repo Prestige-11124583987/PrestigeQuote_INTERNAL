@@ -11,14 +11,14 @@ const deployment = fs.readFileSync(path.join(root, "DEPLOYMENT.md"), "utf8");
 const teamInstructions = fs.readFileSync(path.join(root, "TEAM-PACKAGE-INSTRUCTIONS.txt"), "utf8");
 const changes = fs.readFileSync(path.join(root, "CHANGES.md"), "utf8");
 
-assert.equal(packageJson.version, "2.16.0");
-assert.equal(version, "2.16.0");
-assert.match(readme, /Prestige Internal Quote Tool v2\.16/);
-assert.match(readme, /RELEASE-NOTES-v2\.16\.md/);
-assert.match(deployment, /v2\.16/);
-assert.match(teamInstructions, /v2\.16/);
-assert.match(changes, /## v2\.16 — Add-On Visibility and Revised Pricing Defaults/);
-assert.equal(fs.existsSync(path.join(root, "RELEASE-NOTES-v2.16.md")), true);
+assert.equal(packageJson.version, "2.19.0");
+assert.equal(version, "2.19.0");
+assert.match(readme, /Prestige Internal Quote Tool v2\.19/);
+assert.match(readme, /RELEASE-NOTES-v2\.19\.md/);
+assert.match(deployment, /v2\.19/);
+assert.match(teamInstructions, /v2\.19/);
+assert.match(changes, /## v2\.19\.0 - Unit Notes, Installation Deposit, and Schedule of Values/);
+assert.equal(fs.existsSync(path.join(root, "RELEASE-NOTES-v2.19.md")), true);
 assert.equal(fs.existsSync(path.join(root, "CODE-REVIEW-v2.16.md")), true);
 assert.equal(fs.existsSync(path.join(root, "public", "branding", "quote-header.png")), true);
 assert.equal(

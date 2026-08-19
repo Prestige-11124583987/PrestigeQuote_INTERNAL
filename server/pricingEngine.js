@@ -202,6 +202,7 @@ export function calculateUnit(unit, quote, data) {
     color: unit.color || "",
     glassTexture: unit.glassTexture || "",
     glassColor: unit.glassColor || "",
+    notes: String(unit.notes || "").slice(0, 120),
     selectedAddOns: addOnLines.map((addOn) => addOn.name),
     addOnLines,
     basePrice: money(basePrice),
@@ -210,6 +211,7 @@ export function calculateUnit(unit, quote, data) {
     discountRate: pct(discountRate),
     discountAmountPerUnit: money(discountAmountPerUnit),
     unitPriceAfterDiscount: money(unitPriceAfterDiscount),
+    effectivePricePerSf: money(totalSf > 0 ? unitPriceAfterDiscount / totalSf : 0),
     lineRetailRevenue: money(lineRetailRevenue),
     lineDiscountAmount: money(lineDiscountAmount),
     lineMaterialRevenue: money(lineMaterialRevenue),
@@ -276,6 +278,38 @@ export function calculateQuote(quote, data) {
   // plus additional product/accessory items, excluding installation.
   const productionDepositBasis = materialSubtotal + additionalItemsSubtotal;
   const productionDepositDue = productionDepositBasis * productionDepositRate;
+  const productionCompletionDue = productionDepositBasis - productionDepositDue;
+  const installationDepositRate = number(quote.installationDepositRate, 0);
+  const installationDepositDue = installationNet * installationDepositRate;
+  const installationCompletionDue = installationNet - installationDepositDue;
+
+  const formatRate = (rate) => `${Math.round(number(rate, 0) * 10000) / 100}%`;
+  const scheduleOfValues = [
+    {
+      key: "productionDeposit",
+      title: `Production Deposit – ${formatRate(productionDepositRate)} of Product Cost`,
+      amount: money(productionDepositDue),
+      description: "Due upon order approval to release custom units into production."
+    },
+    {
+      key: "productionCompletion",
+      title: `Production Completion – Remaining ${formatRate(1 - productionDepositRate)} of Product Cost`,
+      amount: money(productionCompletionDue),
+      description: "Due upon completion of the custom units, prior to shipment."
+    },
+    {
+      key: "installationDeposit",
+      title: `Installation Deposit – ${formatRate(installationDepositRate)} of Installation Cost, if applicable`,
+      amount: money(installationDepositDue),
+      description: "May be required on select projects based on the size, duration, or scope of the installation."
+    },
+    {
+      key: "installationCompletion",
+      title: "Installation Completion – Remaining Installation Cost",
+      amount: money(installationCompletionDue),
+      description: "Due upon completion and approval of the installation. Unless an installation deposit is required, 100% of the installation cost is withheld until the work is approved and deemed complete."
+    }
+  ];
 
   const externalUnits = calculatedUnits.map((unit) => ({
     id: unit.id,
@@ -294,11 +328,13 @@ export function calculateQuote(quote, data) {
     color: unit.color,
     glassTexture: unit.glassTexture,
     glassColor: unit.glassColor,
+    notes: unit.notes,
     selectedAddOns: unit.selectedAddOns,
     discountRate: unit.discountRate,
     unitRetailPrice: unit.unitPriceBeforeDiscount,
     unitDiscountAmount: unit.discountAmountPerUnit,
     unitPrice: unit.unitPriceAfterDiscount,
+    effectivePricePerSf: unit.effectivePricePerSf,
     lineRetailRevenue: unit.lineRetailRevenue,
     lineDiscountAmount: unit.lineDiscountAmount,
     lineMaterialRevenue: unit.lineMaterialRevenue
@@ -313,6 +349,7 @@ export function calculateQuote(quote, data) {
     workScope: Array.isArray(quote.workScope) ? quote.workScope.filter(Boolean) : [],
     units: externalUnits,
     additionalItems,
+    scheduleOfValues,
     totals: {
       materialRetailSubtotal: money(materialRetailSubtotal),
       materialDiscountAmount: money(materialDiscountAmount),
@@ -329,7 +366,12 @@ export function calculateQuote(quote, data) {
       quoteTotal: money(quoteTotal),
       productionDepositRate: pct(productionDepositRate),
       productionDepositBasis: money(productionDepositBasis),
-      productionDepositDue: money(productionDepositDue)
+      productionDepositDue: money(productionDepositDue),
+      productionCompletionDue: money(productionCompletionDue),
+      installationDepositRate: pct(installationDepositRate),
+      installationDepositDue: money(installationDepositDue),
+      installationCompletionDue: money(installationCompletionDue),
+      dueToday: money(productionDepositDue)
     }
   };
 
@@ -352,6 +394,7 @@ export function makeSampleQuote() {
     discountTier: "",
     installationDiscountRate: 0,
     productionDepositRate: 0.5,
+    installationDepositRate: 0,
     workScope: [],
     units: [],
     additionalItems: []

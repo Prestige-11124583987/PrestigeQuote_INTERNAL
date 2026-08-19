@@ -16,7 +16,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -42,12 +43,17 @@ button.danger {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   border: 1px solid #B4B4B4;
   border-radius: 0.55rem;
   padding: 0.6rem 0.7rem;
   background: #fff;
+}
+
+textarea {
+  resize: vertical;
 }
 
 .app-shell {
@@ -124,6 +130,10 @@ select {
 
 .grid.four {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.grid.five {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .field span {
@@ -266,6 +276,7 @@ th {
 
   .grid.three,
   .grid.four,
+  .grid.five,
   .addon-grid,
   .totals,
   .kpis {
@@ -2119,4 +2130,160 @@ button:disabled {
     min-width: 0;
     margin-top: 1rem;
   }
+}
+
+
+.unit-heading-with-price {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.unit-heading-with-price h3 {
+  margin-bottom: 0;
+}
+
+.effective-price-sf {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.34rem 0.6rem;
+  border: 1px solid #d8c8f0;
+  border-radius: 0.65rem;
+  background: #f7f2fc;
+  color: #6f42c1;
+}
+
+.effective-price-sf span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.effective-price-sf strong {
+  font-size: 1rem;
+}
+
+.unit-notes-wrapper {
+  grid-column: 1 / -1;
+}
+
+.unit-notes-field {
+  position: relative;
+}
+
+.unit-notes-field small {
+  display: block;
+  margin-top: 0.3rem;
+  color: #6A6A6A;
+  text-align: right;
+  font-size: 0.72rem;
+}
+
+.salesperson-contact {
+  display: block;
+  margin-top: 0.2rem;
+  color: #6A6A6A;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.unit-output-note {
+  font-style: italic;
+}
+
+.sov-preview-page {
+  min-height: 760px;
+}
+
+.sov-heading {
+  margin: 1.2rem 0 1rem;
+}
+
+.sov-heading h2 {
+  margin: 0 0 0.25rem;
+  color: #404040;
+  font-size: 1.5rem;
+}
+
+.sov-heading p {
+  margin: 0;
+  color: #6A6A6A;
+  font-size: 0.82rem;
+}
+
+.sov-grid {
+  display: grid;
+  border: 1px solid #B4B4B4;
+  border-bottom: 0;
+}
+
+.sov-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 125px;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: 92px;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #B4B4B4;
+}
+
+.sov-row:nth-child(even) {
+  background: #f5f5f1;
+}
+
+.sov-sequence {
+  color: #5D5F13;
+  font-weight: 900;
+}
+
+.sov-copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.sov-copy strong {
+  font-size: 0.9rem;
+}
+
+.sov-copy span {
+  color: #6A6A6A;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.sov-amount {
+  text-align: right;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.sov-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.8rem;
+  padding: 0.85rem 1rem;
+  background: #5D5F13;
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.sov-total-row strong {
+  font-size: 1.15rem;
+}
+
+.sov-due-today-note,
+.sov-payment-note {
+  margin: 0.8rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.sov-payment-note {
+  color: #6A6A6A;
 }

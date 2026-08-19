@@ -1,5 +1,5 @@
-PRESTIGE INTERNAL QUOTE TOOL v2.16
-PACKAGE VERSION 2.16.0
+PRESTIGE INTERNAL QUOTE TOOL v2.19
+PACKAGE VERSION 2.19.0
 
 QUOTE HEADER
 The Quote preview and generated PDF use public/branding/quote-header.png.

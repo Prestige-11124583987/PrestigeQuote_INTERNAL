@@ -1,3 +1,14 @@
+## v2.19.0 - Unit Notes, Installation Deposit, and Schedule of Values
+
+- Added a 120-character Notes field to every unit and carried notes into the customer-facing Quote/PDF.
+- Added a purple Effective Price / SF indicator to each unit card using discounted unit product price (including add-ons) divided by total unit SF.
+- Added Installation Deposit % with a 0% default. Installation deposits are billing milestones only and do not increase the Due Today amount.
+- Added an automatic Schedule of Values quote page with Production Deposit, Production Completion, Installation Deposit, and Installation Completion milestones.
+- Added paper-check timing language noting that production starts only after funds are received and cleared and recommending electronic payment methods.
+- Added salesperson email/phone directly beneath the salesperson name on the customer-facing quote.
+- Upgraded quote backup schema support so installation-deposit settings and unit notes restore cleanly.
+- Updated release version references and regression tests to v2.19.0.
+
 
 ## v2.17.0 - Additional Item(s)
 
